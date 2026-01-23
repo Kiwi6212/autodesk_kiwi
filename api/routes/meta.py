@@ -32,7 +32,6 @@ def overview():
             "condition": "Couvert"
         },
         "unread": {
-            "proton": 1,
-            "outlook": 2
+            "proton": 0
         }
     }

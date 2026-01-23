@@ -16,7 +16,7 @@ from exceptions import (
     app_exception_handler, 
     general_exception_handler
 )
-from routes import tasks, meta, integrations, hyperplanning
+from routes import tasks, meta, integrations, hyperplanning, email
 
 settings = get_settings()
 logger = setup_logger("main")
@@ -71,6 +71,7 @@ app.include_router(meta.router)
 app.include_router(tasks.router)
 app.include_router(integrations.router)
 app.include_router(hyperplanning.router)
+app.include_router(email.router)
 
 # Determine path to web folder
 # If frozen (exe), look in _MEIPASS/web

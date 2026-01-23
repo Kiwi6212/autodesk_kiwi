@@ -41,6 +41,9 @@
       <button class="tab" :class="{ active: currentView === 'hyperplanning' }" @click="currentView = 'hyperplanning'">
         🎓 Hyperplanning
       </button>
+      <button class="tab" :class="{ active: currentView === 'mail' }" @click="currentView = 'mail'">
+        📬 Mail
+      </button>
       <button class="tab" :class="{ active: currentView === 'settings' }" @click="currentView = 'settings'">
         ⚙️ Paramètres
       </button>
@@ -64,9 +67,9 @@
           <span x-text="Math.round(weather.current.temp)"></span>°C - 
           <span x-text="getWeatherDesc(weather.current.weathercode)"></span>
         </p>
-        <p x-show="overview.unread"><strong>📬 Non lus:</strong> 
-          Proton: <span x-text="overview.unread?.proton"></span>, 
-          Outlook: <span x-text="overview.unread?.outlook"></span>
+        <p x-show="email.count !== null"><strong>📬 Proton Mail:</strong>
+          <span x-text="email.count"></span> non lu(s)
+          <span x-show="email.error" style="color: var(--danger);">(<span x-text="email.error"></span>)</span>
         </p>
       </div>
 
@@ -349,6 +352,117 @@
             </a>
           </div>
         </div>
+      </div>
+    </section>
+
+    <!-- Vue: Mail (Proton) -->
+    <section x-show="currentView === 'mail'" class="view">
+      <h2>📬 Proton Mail</h2>
+
+      <!-- Status Card -->
+      <div class="card" style="margin-bottom: 20px;">
+        <div style="display: flex; justify-content: space-between; align-items: center;">
+          <div>
+            <span style="font-size: 2rem; font-weight: bold;" x-text="email.count ?? '?'"></span>
+            <span style="color: var(--muted);"> email(s) non lu(s)</span>
+          </div>
+          <div style="display: flex; gap: 10px;">
+            <button @click="email.showCompose = !email.showCompose" class="primary" style="padding: 8px 15px;">
+              <span x-show="!email.showCompose">✉️ Nouveau</span>
+              <span x-show="email.showCompose">✖️ Fermer</span>
+            </button>
+            <button @click="loadEmail()" class="btn" style="padding: 8px 15px;">
+              🔄 Rafraîchir
+            </button>
+          </div>
+        </div>
+        <div x-show="email.error" style="margin-top: 10px; padding: 10px; background: var(--danger); border-radius: 5px;">
+          ⚠️ <span x-text="email.error"></span>
+        </div>
+      </div>
+
+      <!-- Compose Email Form -->
+      <div x-show="email.showCompose" class="card" style="margin-bottom: 20px; background: var(--panel-hover);">
+        <h3 style="margin-top: 0;">✉️ Nouveau message</h3>
+        <form @submit.prevent="sendEmail()" style="display: flex; flex-direction: column; gap: 15px;">
+          <div>
+            <label style="display: block; margin-bottom: 5px; font-size: 0.9rem;">À :</label>
+            <input
+              type="email"
+              x-model="email.compose.to"
+              placeholder="destinataire@exemple.com"
+              required
+              style="width: 100%; padding: 10px; background: var(--bg); color: var(--text); border: 1px solid var(--muted); border-radius: 5px;"
+            />
+          </div>
+          <div>
+            <label style="display: block; margin-bottom: 5px; font-size: 0.9rem;">Sujet :</label>
+            <input
+              type="text"
+              x-model="email.compose.subject"
+              placeholder="Sujet du message"
+              required
+              style="width: 100%; padding: 10px; background: var(--bg); color: var(--text); border: 1px solid var(--muted); border-radius: 5px;"
+            />
+          </div>
+          <div>
+            <label style="display: block; margin-bottom: 5px; font-size: 0.9rem;">Message :</label>
+            <textarea
+              x-model="email.compose.body"
+              rows="8"
+              placeholder="Votre message..."
+              style="width: 100%; padding: 10px; background: var(--bg); color: var(--text); border: 1px solid var(--muted); border-radius: 5px; resize: vertical;"
+            ></textarea>
+          </div>
+          <div style="display: flex; gap: 10px;">
+            <button type="submit" class="primary" style="flex: 1;" :disabled="email.sending">
+              <span x-show="!email.sending">📤 Envoyer</span>
+              <span x-show="email.sending">⏳ Envoi en cours...</span>
+            </button>
+            <button type="button" @click="email.compose = { to: '', subject: '', body: '' }" class="btn">
+              🗑️ Effacer
+            </button>
+          </div>
+        </form>
+      </div>
+
+      <!-- Unread Emails List -->
+      <h3>📥 Derniers emails non lus</h3>
+      <div class="card">
+        <ul class="list">
+          <template x-for="mail in email.emails" :key="mail.subject + mail.date">
+            <li class="grade-item" style="flex-direction: column; align-items: flex-start; gap: 5px;">
+              <strong x-text="mail.subject" style="word-break: break-word;"></strong>
+              <div style="display: flex; justify-content: space-between; width: 100%; font-size: 0.85rem; color: var(--muted);">
+                <span x-text="mail.sender"></span>
+                <small x-text="mail.date"></small>
+              </div>
+            </li>
+          </template>
+        </ul>
+        <div x-show="email.emails.length === 0 && !email.error" class="empty">
+          Aucun email non lu 🎉
+        </div>
+        <div x-show="email.error && email.emails.length === 0" class="empty">
+          Impossible de charger les emails. Vérifiez que Proton Bridge est lancé.
+        </div>
+      </div>
+
+      <!-- Quick Access -->
+      <h3 style="margin-top: 20px;">🔗 Accès rapide</h3>
+      <div class="card">
+        <a href="https://mail.proton.me" target="_blank" class="hp-link">
+          🌍 Ouvrir Proton Mail (Web) ↗
+        </a>
+      </div>
+
+      <!-- Info -->
+      <div class="card" style="margin-top: 20px; background: var(--panel-hover);">
+        <h4 style="margin-top: 0;">ℹ️ Configuration requise</h4>
+        <p style="font-size: 0.9rem; color: var(--muted);">
+          Pour afficher vos emails, vous devez avoir <strong>Proton Bridge</strong> installé et lancé sur votre PC.
+          Les identifiants sont configurés dans le fichier <code>.env</code>.
+        </p>
       </div>
     </section>
 

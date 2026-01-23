@@ -106,36 +106,40 @@ def forecast(lat: float = Query(...), lon: float = Query(...)):
 
 @router.get("/reverse-geocode")
 def reverse_geocode(lat: float = Query(...), lon: float = Query(...)):
-    """Géocodage inverse (Nominatim)"""
-    url = "https://nominatim.openstreetmap.org/reverse"
+    """Géocodage inverse (BigDataCloud - gratuit et fiable)"""
+    url = "https://api.bigdatacloud.net/data/reverse-geocode-client"
     params = {
-        "format": "jsonv2",
-        "lat": lat,
-        "lon": lon,
-        "zoom": 10,
-        "addressdetails": 1,
+        "latitude": lat,
+        "longitude": lon,
+        "localityLanguage": "fr"
     }
-    data = _get_json(url, params)
 
-    address = data.get("address", {})
-    city = (
-        address.get("city") or
-        address.get("town") or
-        address.get("village") or
-        address.get("municipality")
-    )
-    state = address.get("state")
-    country = address.get("country")
-    country_code = (address.get("country_code") or "").upper()
+    try:
+        data = _get_json(url, params, timeout=5.0)
 
-    parts = [p for p in [city, state, country] if p]
-    label = ", ".join(parts) or data.get("display_name", "")
+        city = data.get("city") or data.get("locality") or data.get("principalSubdivision")
+        state = data.get("principalSubdivision")
+        country = data.get("countryName")
+        country_code = (data.get("countryCode") or "").upper()
 
-    logger.info(f"Geocoded ({lat}, {lon}) -> {label}")
-    return {
-        "city": city,
-        "state": state,
-        "country": country,
-        "country_code": country_code,
-        "label": label
-    }
+        parts = [p for p in [city, country] if p]
+        label = ", ".join(parts)
+
+        logger.info(f"Geocoded ({lat}, {lon}) -> {label}")
+        return {
+            "city": city,
+            "state": state,
+            "country": country,
+            "country_code": country_code,
+            "label": label
+        }
+    except Exception as e:
+        # Fallback: return coordinates as label
+        logger.warning(f"Geocoding failed, using fallback: {e}")
+        return {
+            "city": None,
+            "state": None,
+            "country": None,
+            "country_code": None,
+            "label": f"{lat:.2f}, {lon:.2f}"
+        }

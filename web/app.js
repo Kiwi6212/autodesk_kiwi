@@ -55,6 +55,20 @@ function app() {
       showImport: false,
       importInput: ''
     },
+
+    // Email Data (Proton)
+    email: {
+      count: null,
+      emails: [],
+      error: '',
+      showCompose: false,
+      sending: false,
+      compose: {
+        to: '',
+        subject: '',
+        body: ''
+      }
+    },
     
     // Init
     async init() {
@@ -64,7 +78,8 @@ function app() {
         this.loadTasks(),
         this.loadWeather(),
         this.loadStats(),
-        this.loadHyperplanning()
+        this.loadHyperplanning(),
+        this.loadEmail()
       ]);
       
       // Watch view changes
@@ -256,6 +271,48 @@ function app() {
       } catch (err) {
         console.error('Hyperplanning error:', err);
         this.showToast('Erreur chargement emploi du temps', 'error');
+      }
+    },
+
+    // Email (Proton)
+    async loadEmail() {
+      try {
+        const data = await this.fetchJSON(`${this.API_BASE}/email/proton/unread`);
+        this.email.count = data.count_unread;
+        this.email.emails = data.emails || [];
+        this.email.error = data.error || '';
+      } catch (err) {
+        console.error('Email error:', err);
+        this.email.error = 'Impossible de charger';
+      }
+    },
+
+    async sendEmail() {
+      if (!this.email.compose.to || !this.email.compose.subject) {
+        this.showToast('Veuillez remplir le destinataire et le sujet', 'warning');
+        return;
+      }
+
+      this.email.sending = true;
+      try {
+        const result = await this.sendJSON(`${this.API_BASE}/email/proton/send`, {
+          to: this.email.compose.to,
+          subject: this.email.compose.subject,
+          body: this.email.compose.body
+        });
+
+        if (result.success) {
+          this.showToast('Email envoyé avec succès !', 'success');
+          this.email.showCompose = false;
+          this.email.compose = { to: '', subject: '', body: '' };
+        } else {
+          this.showToast(result.error || 'Erreur lors de l\'envoi', 'error');
+        }
+      } catch (err) {
+        console.error('Send email error:', err);
+        this.showToast('Erreur lors de l\'envoi de l\'email', 'error');
+      } finally {
+        this.email.sending = false;
       }
     },
 
