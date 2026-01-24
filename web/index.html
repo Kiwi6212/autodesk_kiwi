@@ -762,10 +762,10 @@
       <h3>📥 Derniers emails non lus</h3>
       <div class="card">
         <ul class="list">
-          <template x-for="mail in email.emails" :key="mail.subject + mail.date">
-            <li class="grade-item" style="flex-direction: column; align-items: flex-start; gap: 5px;">
-              <strong x-text="mail.subject" style="word-break: break-word;"></strong>
-              <div style="display: flex; justify-content: space-between; width: 100%; font-size: 0.85rem; color: var(--muted);">
+          <template x-for="mail in email.emails" :key="mail.id">
+            <li class="email-item" @click="openEmail(mail)">
+              <strong x-text="mail.subject"></strong>
+              <div class="email-meta">
                 <span x-text="mail.sender"></span>
                 <small x-text="mail.date"></small>
               </div>
@@ -777,6 +777,28 @@
         </div>
         <div x-show="email.error && email.emails.length === 0" class="empty">
           Impossible de charger les emails. Vérifiez que Proton Bridge est lancé.
+        </div>
+      </div>
+
+      <div x-show="email.selectedEmail" class="modal-backdrop" @click.self="closeEmail()">
+        <div class="modal email-modal">
+          <div class="modal-header">
+            <h3 x-text="email.selectedEmail?.subject || 'Chargement...'"></h3>
+            <button @click="closeEmail()" class="modal-close">&times;</button>
+          </div>
+          <div class="email-info">
+            <div><strong>De:</strong> <span x-text="email.selectedEmail?.sender"></span></div>
+            <div><strong>Date:</strong> <span x-text="email.selectedEmail?.date"></span></div>
+          </div>
+          <div class="email-body">
+            <div x-show="email.loadingEmail" class="loading-spinner">Chargement...</div>
+            <template x-if="!email.loadingEmail && email.selectedEmail?.html_body">
+              <iframe :srcdoc="email.selectedEmail?.html_body" class="email-iframe"></iframe>
+            </template>
+            <template x-if="!email.loadingEmail && !email.selectedEmail?.html_body">
+              <pre class="email-text" x-text="email.selectedEmail?.body || 'Aucun contenu'"></pre>
+            </template>
+          </div>
         </div>
       </div>
 

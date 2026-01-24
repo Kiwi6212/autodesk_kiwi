@@ -61,7 +61,9 @@ function app() {
         to: '',
         subject: '',
         body: ''
-      }
+      },
+      selectedEmail: null,
+      loadingEmail: false
     },
 
     spotify: {
@@ -492,6 +494,32 @@ function app() {
       } finally {
         this.email.sending = false;
       }
+    },
+
+    async openEmail(mail) {
+      this.email.loadingEmail = true;
+      this.email.selectedEmail = {
+        id: mail.id,
+        subject: mail.subject,
+        sender: mail.sender,
+        date: mail.date,
+        body: '',
+        html_body: null
+      };
+
+      try {
+        const data = await this.fetchJSON(`${this.API_BASE}/email/proton/message/${mail.id}`);
+        this.email.selectedEmail = data;
+      } catch (err) {
+        console.error('Error loading email:', err);
+        this.email.selectedEmail.body = 'Erreur lors du chargement de l\'email';
+      } finally {
+        this.email.loadingEmail = false;
+      }
+    },
+
+    closeEmail() {
+      this.email.selectedEmail = null;
     },
 
     async importGrades() {

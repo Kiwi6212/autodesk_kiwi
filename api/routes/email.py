@@ -3,8 +3,8 @@ import imaplib
 import email
 import ssl
 from email.header import decode_header
-from typing import List
-from fastapi import APIRouter
+from typing import List, Optional
+from fastapi import APIRouter, Query
 from pydantic import BaseModel
 from dotenv import load_dotenv
 
@@ -14,6 +14,7 @@ router = APIRouter(prefix="/email", tags=["Email"])
 
 
 class EmailItem(BaseModel):
+    id: str
     subject: str
     sender: str
     date: str
@@ -23,36 +24,107 @@ class EmailSummary(BaseModel):
     emails: List[EmailItem] = []
     error: str = ""
 
+class EmailDetail(BaseModel):
+    id: str
+    subject: str
+    sender: str
+    date: str
+    body: str
+    html_body: Optional[str] = None
+    error: str = ""
 
-@router.get("/proton/unread", response_model=EmailSummary)
-def get_proton_unread():
+
+def decode_email_header(header):
+    if not header:
+        return "(No subject)"
+    decoded_list = decode_header(header)
+    result = ""
+    for text, encoding in decoded_list:
+        if isinstance(text, bytes):
+            result += text.decode(encoding if encoding else "utf-8", errors="ignore")
+        else:
+            result += str(text)
+    return result
+
+
+def get_email_body(msg):
+    body = ""
+    html_body = None
+
+    if msg.is_multipart():
+        for part in msg.walk():
+            content_type = part.get_content_type()
+            content_disposition = str(part.get("Content-Disposition", ""))
+
+            if "attachment" in content_disposition:
+                continue
+
+            if content_type == "text/plain":
+                try:
+                    charset = part.get_content_charset() or "utf-8"
+                    body = part.get_payload(decode=True).decode(charset, errors="ignore")
+                except:
+                    body = str(part.get_payload())
+            elif content_type == "text/html" and not html_body:
+                try:
+                    charset = part.get_content_charset() or "utf-8"
+                    html_body = part.get_payload(decode=True).decode(charset, errors="ignore")
+                except:
+                    html_body = str(part.get_payload())
+    else:
+        content_type = msg.get_content_type()
+        try:
+            charset = msg.get_content_charset() or "utf-8"
+            payload = msg.get_payload(decode=True)
+            if payload:
+                body = payload.decode(charset, errors="ignore")
+        except:
+            body = str(msg.get_payload())
+
+        if content_type == "text/html":
+            html_body = body
+            body = ""
+
+    return body, html_body
+
+
+def connect_to_mail():
     host = os.getenv("PROTON_BRIDGE_HOST", "127.0.0.1")
     port = int(os.getenv("PROTON_BRIDGE_PORT", "1143"))
     user = os.getenv("PROTON_BRIDGE_USER")
     password = os.getenv("PROTON_BRIDGE_PASS")
 
     if not all([user, password]):
-        return EmailSummary(count_unread=0, error="Incomplete .env configuration (PROTON_BRIDGE_USER/PASS)")
-
-    print(f"DEBUG: Connecting to {host}:{port} with user='{user}'")
+        return None, "Incomplete .env configuration"
 
     try:
         mail = imaplib.IMAP4(host, port)
-
         try:
             mail.starttls()
-        except Exception as e:
+        except:
             pass
-
         mail.login(user, password)
+        return mail, None
+    except ConnectionRefusedError:
+        return None, "Proton Bridge not running or wrong port"
+    except imaplib.IMAP4.error as e:
+        return None, f"IMAP error: {str(e)}"
+    except Exception as e:
+        return None, f"Error: {str(e)}"
 
+
+@router.get("/proton/unread", response_model=EmailSummary)
+def get_proton_unread():
+    mail, error = connect_to_mail()
+    if error:
+        return EmailSummary(count_unread=0, error=error)
+
+    try:
         mail.select("inbox")
-
         status, messages = mail.search(None, "(UNSEEN)")
 
         email_ids = messages[0].split()
         count = len(email_ids)
-
         email_list = []
 
         for e_id in reversed(email_ids[-5:]):
@@ -63,25 +135,11 @@ def get_proton_unread():
                     if isinstance(response_part, tuple):
                         msg = email.message_from_bytes(response_part[1])
 
-                        subject_header = msg["Subject"]
-                        subject_text = "(No subject)"
-                        if subject_header:
-                            decoded_list = decode_header(subject_header)
-                            subject_text = ""
-                            for text, encoding in decoded_list:
-                                if isinstance(text, bytes):
-                                    subject_text += text.decode(encoding if encoding else "utf-8", errors="ignore")
-                                else:
-                                    subject_text += str(text)
-
-                        from_header = msg.get("From", "Unknown")
-
-                        date_header = msg.get("Date", "")
-
                         email_list.append(EmailItem(
-                            subject=subject_text,
-                            sender=from_header,
-                            date=date_header
+                            id=e_id.decode(),
+                            subject=decode_email_header(msg["Subject"]),
+                            sender=msg.get("From", "Unknown"),
+                            date=msg.get("Date", "")
                         ))
             except Exception as e:
                 print(f"Error reading email {e_id}: {e}")
@@ -90,18 +148,48 @@ def get_proton_unread():
         mail.close()
         mail.logout()
 
-        return EmailSummary(
-            count_unread=count,
-            emails=email_list
-        )
+        return EmailSummary(count_unread=count, emails=email_list)
 
-    except ConnectionRefusedError:
-        return EmailSummary(count_unread=0, error="Proton Bridge not running or wrong port")
-    except imaplib.IMAP4.error as e:
-        return EmailSummary(count_unread=0, error=f"IMAP error (Login?): {str(e)}")
     except Exception as e:
         print(f"Unknown error: {e}")
         return EmailSummary(count_unread=0, error=f"Error: {str(e)}")
+
+
+@router.get("/proton/message/{email_id}", response_model=EmailDetail)
+def get_email_detail(email_id: str):
+    mail, error = connect_to_mail()
+    if error:
+        return EmailDetail(id=email_id, subject="", sender="", date="", body="", error=error)
+
+    try:
+        mail.select("inbox")
+        _, msg_data = mail.fetch(email_id.encode(), "(RFC822)")
+
+        for response_part in msg_data:
+            if isinstance(response_part, tuple):
+                msg = email.message_from_bytes(response_part[1])
+
+                body, html_body = get_email_body(msg)
+
+                mail.close()
+                mail.logout()
+
+                return EmailDetail(
+                    id=email_id,
+                    subject=decode_email_header(msg["Subject"]),
+                    sender=msg.get("From", "Unknown"),
+                    date=msg.get("Date", ""),
+                    body=body,
+                    html_body=html_body
+                )
+
+        mail.close()
+        mail.logout()
+        return EmailDetail(id=email_id, subject="", sender="", date="", body="", error="Email not found")
+
+    except Exception as e:
+        print(f"Error fetching email {email_id}: {e}")
+        return EmailDetail(id=email_id, subject="", sender="", date="", body="", error=str(e))
 
 
 class EmailHistoryResponse(BaseModel):
@@ -112,23 +200,12 @@ class EmailHistoryResponse(BaseModel):
 
 @router.get("/proton/history", response_model=EmailHistoryResponse)
 def get_proton_history(page: int = 1, per_page: int = 20):
-    host = os.getenv("PROTON_BRIDGE_HOST", "127.0.0.1")
-    port = int(os.getenv("PROTON_BRIDGE_PORT", "1143"))
-    user = os.getenv("PROTON_BRIDGE_USER")
-    password = os.getenv("PROTON_BRIDGE_PASS")
-
-    if not all([user, password]):
-        return EmailHistoryResponse(total_count=0, error="Incomplete .env configuration")
+    mail, error = connect_to_mail()
+    if error:
+        return EmailHistoryResponse(total_count=0, error=error)
 
     try:
-        mail = imaplib.IMAP4(host, port)
-        try:
-            mail.starttls()
-        except:
-            pass
-        mail.login(user, password)
         mail.select("inbox")
-
         status, messages = mail.search(None, "ALL")
 
         if status != "OK":
@@ -151,24 +228,11 @@ def get_proton_history(page: int = 1, per_page: int = 20):
                     if isinstance(response_part, tuple):
                         msg = email.message_from_bytes(response_part[1])
 
-                        subject_header = msg["Subject"]
-                        subject_text = "(No subject)"
-                        if subject_header:
-                            decoded_list = decode_header(subject_header)
-                            subject_text = ""
-                            for text, encoding in decoded_list:
-                                if isinstance(text, bytes):
-                                    subject_text += text.decode(encoding if encoding else "utf-8", errors="ignore")
-                                else:
-                                    subject_text += str(text)
-
-                        from_header = msg.get("From", "Unknown")
-                        date_header = msg.get("Date", "")
-
                         email_list.append(EmailItem(
-                            subject=subject_text,
-                            sender=from_header,
-                            date=date_header
+                            id=e_id.decode(),
+                            subject=decode_email_header(msg["Subject"]),
+                            sender=msg.get("From", "Unknown"),
+                            date=msg.get("Date", "")
                         ))
             except Exception as e:
                 print(f"Error reading email {e_id}: {e}")
@@ -185,10 +249,6 @@ def get_proton_history(page: int = 1, per_page: int = 20):
             has_more=has_more
         )
 
-    except ConnectionRefusedError:
-        return EmailHistoryResponse(total_count=0, error="Proton Bridge not running")
-    except imaplib.IMAP4.error as e:
-        return EmailHistoryResponse(total_count=0, error=f"IMAP error: {str(e)}")
     except Exception as e:
         print(f"History error: {e}")
         return EmailHistoryResponse(total_count=0, error=f"Error: {str(e)}")
