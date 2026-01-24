@@ -1,45 +1,64 @@
 # 🗺️ Roadmap - AutoDesk Kiwi
 
-Ce document trace les grandes lignes des évolutions futures pour AutoDesk Kiwi.
+This document outlines the major future developments for AutoDesk Kiwi.
 
-## 📅 Court Terme (Q1)
+## ✅ Completed
 
-- [ ] **Amélioration de l'UI/UX** :
-  - [ ] Ajouter des animations de transition plus fluides entre les vues.
-  - [ ] Implémenter un mode "Focus" pour masquer les distractions.
-- [ ] **Fonctionnalités Tâches** :
-  - [ ] Ajouter des dates d'échéance (Due Dates).
-  - [ ] Support des sous-tâches.
-  - [ ] Catégories ou Tags personnalisables.
-- **Tech** :
-  - [ ] Ajouter des tests unitaires pour le backend (`pytest`).
-  - [ ] Mettre en place un linter/formatter (`ruff` ou `black`).
+- [x] **Due dates** for tasks
+- [x] **Customizable tags/categories** for tasks
+- [x] **PWA** (Progressive Web App) with offline support
+- [x] **Dark/Light mode** toggle
+- [x] **Spotify integration** with playback controls
+- [x] **Email integration** (Proton Mail via Bridge)
+- [x] **Pomodoro timer** widget
+- [x] **Quick notes** widget
+- [x] **Favorite links** widget
+- [x] **Event countdown** widget
+- [x] **Data export/import** (JSON backup)
+- [x] **Drag & drop** for tasks (Kanban board)
+- [x] **Keyboard shortcuts** (N: new task, /: search, Esc: close)
+- [x] **Dynamic quotes** from API
+- [x] **Hyperplanning integration** (courses, grades)
 
-## 📅 Moyen Terme (Q2)
+## 📅 Short Term (Q1)
 
-- [ ] **Authentification & Multi-utilisateurs** :
-  - [ ] Système de login/register (JWT).
-  - [ ] Sécurisation des endpoints API.
-- [ ] **Synchronisation Cloud** :
-  - [ ] Possibilité de sauvegarder la base de données sur un cloud (ex: S3, Google Drive).
-- [ ] **Personnalisation** :
-  - [ ] Thèmes personnalisables (couleurs, polices).
-  - [ ] Widgets configurables sur le dashboard.
+- [ ] **UI/UX Improvements**:
+  - [ ] Add smoother transition animations between views.
+  - [ ] Implement a "Focus" mode to hide distractions.
+- [ ] **Task Features**:
+  - [ ] Support for subtasks.
+  - [ ] Recurring tasks.
+- **Tech**:
+  - [ ] Add unit tests for the backend (`pytest`).
+  - [ ] Set up a linter/formatter (`ruff` or `black`).
 
-## 📅 Long Terme (Q3+)
+## 📅 Medium Term (Q2)
 
-- [ ] **Notifications Push** :
-  - [ ] Rappels de tâches et d'événements sur le navigateur/mobile.
-- [ ] **Intégrations Avancées** :
-  - [ ] Connexion directe aux API Google Calendar / Outlook Calendar (lecture/écriture).
-  - [ ] Intégration Notion ou Obsidian.
-- [ ] **Application Mobile** :
-  - [ ] Envisager une PWA (Progressive Web App) ou une app native (React Native/Flutter).
-- [ ] **Dockerisation** :
-  - [ ] Créer un `Dockerfile` et `docker-compose.yml` pour un déploiement facile.
+- [ ] **Authentication & Multi-user**:
+  - [ ] Login/register system (JWT).
+  - [ ] Secure API endpoints.
+- [ ] **Cloud Synchronization**:
+  - [ ] Ability to save the database to the cloud (e.g., S3, Google Drive).
+- [ ] **Customization**:
+  - [ ] Customizable themes (colors, fonts).
+  - [ ] Configurable/draggable widgets on the dashboard.
 
-## 💡 Idées en Vrac
+## 📅 Long Term (Q3+)
 
-- Mode "Sombre/Clair" automatique selon le système.
-- Commande vocale pour ajouter des tâches.
-- Analyse de productivité (graphiques d'avancement).
+- [ ] **Push Notifications**:
+  - [ ] Task and event reminders on browser/mobile.
+- [ ] **Advanced Integrations**:
+  - [ ] Direct connection to Google Calendar / Outlook Calendar APIs (read/write).
+  - [ ] Notion or Obsidian integration.
+- [ ] **Dockerization**:
+  - [ ] Create a `Dockerfile` and `docker-compose.yml` for easy deployment.
+
+## 💡 Random Ideas
+
+- Automatic "Dark/Light" mode based on system settings.
+- Voice command to add tasks.
+- Productivity analysis (progress charts).
+- Habit tracker.
+- Study statistics with time tracking.
+- Ambient sounds for focus (lo-fi, rain...).
+- Gamification (streaks, badges, XP).
