@@ -6,7 +6,6 @@ logger = setup_logger("exceptions")
 
 
 class AppException(Exception):
-    """Exception de base de l'app"""
     def __init__(self, message: str, status_code: int = 500):
         self.message = message
         self.status_code = status_code
@@ -24,7 +23,6 @@ class ValidationException(AppException):
 
 
 async def app_exception_handler(request: Request, exc: AppException):
-    """Handler pour exceptions custom"""
     logger.error(f"{exc.__class__.__name__}: {exc.message}")
     return JSONResponse(
         status_code=exc.status_code,
@@ -33,7 +31,6 @@ async def app_exception_handler(request: Request, exc: AppException):
 
 
 async def general_exception_handler(request: Request, exc: Exception):
-    """Handler pour exceptions génériques"""
     logger.error(f"Unhandled exception: {exc}", exc_info=True)
     return JSONResponse(
         status_code=500,

@@ -1,13 +1,10 @@
 function app() {
   return {
-    // Config
     API_BASE: 'http://127.0.0.1:8000',
-    
-    // State
+
     currentView: localStorage.getItem('lastView') || 'today',
     loading: { tasks: false, weather: false },
-    
-    // Data
+
     tasks: [],
     overview: {},
     stats: {},
@@ -17,22 +14,21 @@ function app() {
       daily: [],
       location: ''
     },
-    
-    // Forms
-    newTask: { title: '', priority: 'normal' },
+
+    newTask: { title: '', priority: 'normal', due_date: '', tags: '' },
+    editingTask: null,
     filters: {
       q: '',
+      tag: '',
       status: '',
       priority: '',
       sort: '-created_at'
     },
-    
-    // UI
+
     selectedTasks: [],
     toasts: [],
     toastId: 0,
-    
-    // Weather codes
+
     weatherCodes: {
       0: '☀️ Ciel dégagé', 1: '🌤️ Dégagé', 2: '⛅ Nuageux', 3: '☁️ Couvert',
       45: '🌫️ Brouillard', 48: '🌫️ Brouillard givrant',
@@ -46,7 +42,6 @@ function app() {
       95: '⛈️ Orage', 96: '⛈️ Orage + grêle légère', 99: '⛈️ Orage + grêle forte'
     },
 
-    // Hyperplanning Data
     hyperplanning: {
       schedule: { display_date: '', courses: [] },
       nextCourses: [],
@@ -56,7 +51,6 @@ function app() {
       importInput: ''
     },
 
-    // Email Data (Proton)
     email: {
       count: null,
       emails: [],
@@ -69,26 +63,139 @@ function app() {
         body: ''
       }
     },
-    
-    // Init
+
+    spotify: {
+      connected: false,
+      loading: false,
+      error: '',
+      track: null,
+      pollingInterval: null
+    },
+
+    theme: localStorage.getItem('theme') || 'dark',
+
+    clock: {
+      time: '',
+      date: '',
+      interval: null
+    },
+
+    pomodoro: {
+      minutes: 25,
+      seconds: 0,
+      isRunning: false,
+      mode: 'work',
+      completedPomodoros: 0,
+      interval: null,
+      workDuration: 25,
+      breakDuration: 5,
+      longBreakDuration: 15
+    },
+
+    quickNotes: localStorage.getItem('quickNotes') || '',
+
+    favoriteLinks: JSON.parse(localStorage.getItem('favoriteLinks') || '[]'),
+    showAddLink: false,
+    newLink: { name: '', url: '' },
+
+    countdowns: JSON.parse(localStorage.getItem('countdowns') || '[]'),
+    showAddCountdown: false,
+    newCountdown: { name: '', date: '' },
+
+    importExport: {
+      importing: false,
+      exporting: false
+    },
+
+    taskViewMode: localStorage.getItem('taskViewMode') || 'list',
+    draggingTask: null,
+
+    availableTags: [],
+
     async init() {
+      if ('serviceWorker' in navigator) {
+        navigator.serviceWorker.register('/sw.js')
+          .then(() => console.log('[PWA] Service Worker registered'))
+          .catch(err => console.warn('[PWA] Service Worker failed:', err));
+      }
+
       this.loadFiltersFromStorage();
+      this.applyTheme();
+      this.startClock();
       await Promise.all([
         this.loadOverview(),
         this.loadTasks(),
         this.loadWeather(),
         this.loadStats(),
         this.loadHyperplanning(),
-        this.loadEmail()
+        this.loadEmail(),
+        this.loadSpotify()
       ]);
-      
-      // Watch view changes
+
       this.$watch('currentView', (view) => {
         localStorage.setItem('lastView', view);
       });
+
+      document.addEventListener('keydown', (e) => this.handleKeyboard(e));
     },
-    
-    // HTTP Helpers
+
+    handleKeyboard(e) {
+      if (['INPUT', 'TEXTAREA'].includes(document.activeElement.tagName)) {
+        if (e.key === 'Escape') {
+          document.activeElement.blur();
+        }
+        return;
+      }
+
+      if (e.ctrlKey || e.metaKey) {
+        switch (e.key) {
+          case 'n':
+          case 'N':
+            e.preventDefault();
+            this.currentView = 'tasks';
+            this.$nextTick(() => {
+              document.querySelector('input[x-model="newTask.title"]')?.focus();
+            });
+            break;
+          case '1':
+            e.preventDefault();
+            this.currentView = 'today';
+            break;
+          case '2':
+            e.preventDefault();
+            this.currentView = 'tasks';
+            break;
+          case '3':
+            e.preventDefault();
+            this.currentView = 'weather';
+            break;
+          case '4':
+            e.preventDefault();
+            this.currentView = 'hyperplanning';
+            break;
+          case '5':
+            e.preventDefault();
+            this.currentView = 'mail';
+            break;
+          case '6':
+            e.preventDefault();
+            this.currentView = 'settings';
+            break;
+        }
+      }
+
+      switch (e.key) {
+        case 'Escape':
+          this.selectedTasks = [];
+          this.email.showCompose = false;
+          this.hyperplanning.showImport = false;
+          break;
+        case 't':
+          this.toggleTheme();
+          break;
+      }
+    },
+
     async fetchJSON(url, options = {}) {
       try {
         const res = await fetch(url, {
@@ -102,7 +209,7 @@ function app() {
         throw err;
       }
     },
-    
+
     async sendJSON(url, data, method = 'POST') {
       return this.fetchJSON(url, {
         method,
@@ -110,8 +217,7 @@ function app() {
         body: JSON.stringify(data)
       });
     },
-    
-    // Overview
+
     async loadOverview() {
       try {
         this.overview = await this.fetchJSON(`${this.API_BASE}/meta/overview`);
@@ -119,8 +225,17 @@ function app() {
         console.error('Overview error:', err);
       }
     },
-    
-    // Stats
+
+    async refreshQuote() {
+      try {
+        const quote = await this.fetchJSON(`${this.API_BASE}/meta/quote`);
+        this.overview.quote = quote.content;
+        this.overview.quote_author = quote.author;
+      } catch (err) {
+        console.error('Quote refresh error:', err);
+      }
+    },
+
     async loadStats() {
       try {
         this.stats = await this.fetchJSON(`${this.API_BASE}/tasks/stats/summary`);
@@ -128,8 +243,7 @@ function app() {
         console.error('Stats error:', err);
       }
     },
-    
-    // Tasks
+
     async loadTasks() {
       this.loading.tasks = true;
       try {
@@ -138,7 +252,9 @@ function app() {
           limit: 50,
           offset: 0
         });
+        if (!this.filters.tag) params.delete('tag');
         this.tasks = await this.fetchJSON(`${this.API_BASE}/tasks?${params}`);
+        this.extractTags();
         this.saveFiltersToStorage();
       } catch (err) {
         console.error('Tasks error:', err);
@@ -146,18 +262,27 @@ function app() {
         this.loading.tasks = false;
       }
     },
-    
+
     debouncedLoadTasks() {
       clearTimeout(this.debounceTimer);
       this.debounceTimer = setTimeout(() => this.loadTasks(), 300);
     },
-    
+
     async addTask() {
       if (!this.newTask.title.trim()) return;
-      
+
       try {
-        await this.sendJSON(`${this.API_BASE}/tasks`, this.newTask);
-        this.newTask = { title: '', priority: 'normal' };
+        const payload = { ...this.newTask };
+        if (payload.due_date) {
+          payload.due_date = new Date(payload.due_date).toISOString();
+        } else {
+          delete payload.due_date;
+        }
+        if (!payload.tags?.trim()) {
+          delete payload.tags;
+        }
+        await this.sendJSON(`${this.API_BASE}/tasks`, payload);
+        this.newTask = { title: '', priority: 'normal', due_date: '', tags: '' };
         await this.loadTasks();
         await this.loadStats();
         this.showToast('Tâche ajoutée !', 'success');
@@ -165,10 +290,67 @@ function app() {
         this.showToast('Erreur lors de l\'ajout', 'error');
       }
     },
-    
+
+    extractTags() {
+      const allTags = new Set();
+      this.tasks.forEach(task => {
+        if (task.tags) {
+          task.tags.split(',').forEach(tag => {
+            const trimmed = tag.trim();
+            if (trimmed) allTags.add(trimmed);
+          });
+        }
+      });
+      this.availableTags = Array.from(allTags).sort();
+    },
+
+    getTaskTags(task) {
+      if (!task.tags) return [];
+      return task.tags.split(',').map(t => t.trim()).filter(t => t);
+    },
+
+    openEditTask(task) {
+      this.editingTask = {
+        ...task,
+        due_date: task.due_date ? task.due_date.slice(0, 16) : ''
+      };
+    },
+
+    closeEditTask() {
+      this.editingTask = null;
+    },
+
+    async saveEditTask() {
+      if (!this.editingTask || !this.editingTask.title.trim()) return;
+
+      try {
+        const payload = {
+          title: this.editingTask.title,
+          description: this.editingTask.description,
+          priority: this.editingTask.priority,
+          status: this.editingTask.status,
+          tags: this.editingTask.tags || null
+        };
+        if (this.editingTask.due_date) {
+          payload.due_date = new Date(this.editingTask.due_date).toISOString();
+        }
+        await this.fetchJSON(`${this.API_BASE}/tasks/${this.editingTask.id}`, {
+          method: 'PATCH',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(payload)
+        });
+        this.editingTask = null;
+        await this.loadTasks();
+        await this.loadStats();
+        this.showToast('Tâche modifiée !', 'success');
+      } catch (err) {
+        this.showToast('Erreur lors de la modification', 'error');
+      }
+    },
+
     async deleteTask(id) {
       if (!confirm('Supprimer cette tâche ?')) return;
-      
+
       try {
         await fetch(`${this.API_BASE}/tasks/${id}`, { method: 'DELETE' });
         await this.loadTasks();
@@ -178,11 +360,11 @@ function app() {
         this.showToast('Erreur lors de la suppression', 'error');
       }
     },
-    
+
     async bulkDelete() {
       if (this.selectedTasks.length === 0) return;
       if (!confirm(`Supprimer ${this.selectedTasks.length} tâche(s) ?`)) return;
-      
+
       try {
         await this.sendJSON(`${this.API_BASE}/tasks/bulk-delete`, { ids: this.selectedTasks }, 'POST');
         this.selectedTasks = [];
@@ -193,7 +375,7 @@ function app() {
         this.showToast('Erreur lors de la suppression groupée', 'error');
       }
     },
-    
+
     toggleTaskSelection(id) {
       const index = this.selectedTasks.indexOf(id);
       if (index > -1) {
@@ -202,17 +384,16 @@ function app() {
         this.selectedTasks.push(id);
       }
     },
-    
-    // Weather
+
     async loadWeather() {
       this.loading.weather = true;
-      
+
       if (!('geolocation' in navigator)) {
         this.showToast('Géolocalisation non disponible', 'error');
         this.loading.weather = false;
         return;
       }
-      
+
       try {
         const position = await new Promise((resolve, reject) => {
           navigator.geolocation.getCurrentPosition(resolve, reject, {
@@ -220,22 +401,22 @@ function app() {
             timeout: 8000
           });
         });
-        
+
         const lat = position.coords.latitude;
         const lon = position.coords.longitude;
         const params = `lat=${lat}&lon=${lon}`;
-        
+
         const [current, forecast, place] = await Promise.all([
           this.fetchJSON(`${this.API_BASE}/external/weather?${params}`),
           this.fetchJSON(`${this.API_BASE}/external/forecast?${params}`),
           this.fetchJSON(`${this.API_BASE}/external/reverse-geocode?${params}`).catch(() => null)
         ]);
-        
+
         this.weather.current = current;
         this.weather.hourly = forecast.hourly || [];
         this.weather.daily = forecast.daily || [];
         this.weather.location = place ? `(${place.city || place.label})` : '';
-        
+
       } catch (err) {
         console.error('Weather error:', err);
         this.showToast('Impossible de charger la météo', 'error');
@@ -243,12 +424,11 @@ function app() {
         this.loading.weather = false;
       }
     },
-    
+
     getWeatherDesc(code) {
       return this.weatherCodes[code] || `Code ${code}`;
     },
 
-    // Hyperplanning
     async loadHyperplanning() {
       try {
         const [schedule, stats, nextCourses, grades] = await Promise.all([
@@ -258,7 +438,6 @@ function app() {
           this.fetchJSON(`${this.API_BASE}/hyperplanning/grades`)
         ]);
 
-        // Handle legacy array response if backend not updated yet (safety check)
         if (Array.isArray(schedule)) {
              this.hyperplanning.schedule = { display_date: "Aujourd'hui", courses: schedule };
         } else {
@@ -274,7 +453,6 @@ function app() {
       }
     },
 
-    // Email (Proton)
     async loadEmail() {
       try {
         const data = await this.fetchJSON(`${this.API_BASE}/email/proton/unread`);
@@ -316,7 +494,6 @@ function app() {
       }
     },
 
-    // Import/Clear Grades
     async importGrades() {
       try {
         const input = this.hyperplanning.importInput.trim();
@@ -362,7 +539,449 @@ function app() {
         this.showToast('Erreur suppression notes', 'error');
       }
     },
-    // Utilities
+
+    async loadSpotify() {
+      try {
+        const status = await this.fetchJSON(`${this.API_BASE}/spotify/status`);
+        this.spotify.connected = status.connected;
+        this.spotify.error = status.error || '';
+
+        if (status.connected) {
+          await this.loadNowPlaying();
+          this.startSpotifyPolling();
+        }
+      } catch (err) {
+        console.error('Spotify status error:', err);
+        this.spotify.error = 'Impossible de vérifier Spotify';
+      }
+    },
+
+    async loadNowPlaying() {
+      if (!this.spotify.connected) return;
+
+      try {
+        const data = await this.fetchJSON(`${this.API_BASE}/spotify/now-playing`);
+        if (data.error && data.error !== 'Nothing playing') {
+          this.spotify.error = data.error;
+          this.spotify.track = null;
+        } else if (data.track_name) {
+          this.spotify.track = data;
+          this.spotify.error = '';
+        } else {
+          this.spotify.track = null;
+          this.spotify.error = '';
+        }
+      } catch (err) {
+        console.error('Now playing error:', err);
+      }
+    },
+
+    startSpotifyPolling() {
+      if (this.spotify.pollingInterval) return;
+      this.spotify.pollingInterval = setInterval(() => this.loadNowPlaying(), 5000);
+    },
+
+    stopSpotifyPolling() {
+      if (this.spotify.pollingInterval) {
+        clearInterval(this.spotify.pollingInterval);
+        this.spotify.pollingInterval = null;
+      }
+    },
+
+    spotifyLogin() {
+      window.location.href = `${this.API_BASE}/spotify/login`;
+    },
+
+    async spotifyLogout() {
+      try {
+        await this.sendJSON(`${this.API_BASE}/spotify/logout`, {});
+        this.spotify.connected = false;
+        this.spotify.track = null;
+        this.stopSpotifyPolling();
+        this.showToast('Déconnecté de Spotify', 'success');
+      } catch (err) {
+        console.error('Spotify logout error:', err);
+      }
+    },
+
+    async spotifyPlay() {
+      try {
+        await this.sendJSON(`${this.API_BASE}/spotify/play`, {});
+        await this.loadNowPlaying();
+      } catch (err) {
+        console.error('Spotify play error:', err);
+      }
+    },
+
+    async spotifyPause() {
+      try {
+        await this.sendJSON(`${this.API_BASE}/spotify/pause`, {});
+        await this.loadNowPlaying();
+      } catch (err) {
+        console.error('Spotify pause error:', err);
+      }
+    },
+
+    async spotifyNext() {
+      try {
+        await this.sendJSON(`${this.API_BASE}/spotify/next`, {});
+        setTimeout(() => this.loadNowPlaying(), 300);
+      } catch (err) {
+        console.error('Spotify next error:', err);
+      }
+    },
+
+    async spotifyPrevious() {
+      try {
+        await this.sendJSON(`${this.API_BASE}/spotify/previous`, {});
+        setTimeout(() => this.loadNowPlaying(), 300);
+      } catch (err) {
+        console.error('Spotify previous error:', err);
+      }
+    },
+
+    formatTime(ms) {
+      if (!ms) return '0:00';
+      const seconds = Math.floor(ms / 1000);
+      const mins = Math.floor(seconds / 60);
+      const secs = seconds % 60;
+      return `${mins}:${secs.toString().padStart(2, '0')}`;
+    },
+
+    applyTheme() {
+      document.documentElement.setAttribute('data-theme', this.theme);
+    },
+
+    toggleTheme() {
+      this.theme = this.theme === 'dark' ? 'light' : 'dark';
+      localStorage.setItem('theme', this.theme);
+      this.applyTheme();
+    },
+
+    saveQuickNotes() {
+      localStorage.setItem('quickNotes', this.quickNotes);
+    },
+
+    saveFavoriteLinks() {
+      localStorage.setItem('favoriteLinks', JSON.stringify(this.favoriteLinks));
+    },
+
+    addFavoriteLink() {
+      if (!this.newLink.name.trim() || !this.newLink.url.trim()) return;
+      let url = this.newLink.url.trim();
+      if (!url.startsWith('http://') && !url.startsWith('https://')) {
+        url = 'https://' + url;
+      }
+      this.favoriteLinks.push({
+        id: Date.now(),
+        name: this.newLink.name.trim(),
+        url: url
+      });
+      this.saveFavoriteLinks();
+      this.newLink = { name: '', url: '' };
+      this.showAddLink = false;
+    },
+
+    removeFavoriteLink(id) {
+      this.favoriteLinks = this.favoriteLinks.filter(link => link.id !== id);
+      this.saveFavoriteLinks();
+    },
+
+    saveCountdowns() {
+      localStorage.setItem('countdowns', JSON.stringify(this.countdowns));
+    },
+
+    addCountdown() {
+      if (!this.newCountdown.name.trim() || !this.newCountdown.date) return;
+      this.countdowns.push({
+        id: Date.now(),
+        name: this.newCountdown.name.trim(),
+        date: this.newCountdown.date
+      });
+      this.saveCountdowns();
+      this.newCountdown = { name: '', date: '' };
+      this.showAddCountdown = false;
+    },
+
+    removeCountdown(id) {
+      this.countdowns = this.countdowns.filter(c => c.id !== id);
+      this.saveCountdowns();
+    },
+
+    getDaysRemaining(dateStr) {
+      const target = new Date(dateStr);
+      const now = new Date();
+      now.setHours(0, 0, 0, 0);
+      target.setHours(0, 0, 0, 0);
+      const diff = target - now;
+      return Math.ceil(diff / (1000 * 60 * 60 * 24));
+    },
+
+    formatCountdownDate(dateStr) {
+      return new Date(dateStr).toLocaleDateString('fr-FR', {
+        day: 'numeric',
+        month: 'short',
+        year: 'numeric'
+      });
+    },
+
+    async exportData() {
+      this.importExport.exporting = true;
+      try {
+        const data = {
+          version: '1.0',
+          exportedAt: new Date().toISOString(),
+          tasks: this.tasks,
+          quickNotes: this.quickNotes,
+          favoriteLinks: this.favoriteLinks,
+          countdowns: this.countdowns,
+          theme: this.theme,
+          filters: this.filters
+        };
+
+        const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `autodesk-kiwi-backup-${new Date().toISOString().split('T')[0]}.json`;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        URL.revokeObjectURL(url);
+
+        this.showToast('Données exportées avec succès', 'success');
+      } catch (err) {
+        console.error('Export error:', err);
+        this.showToast('Erreur lors de l\'export', 'error');
+      } finally {
+        this.importExport.exporting = false;
+      }
+    },
+
+    toggleTaskViewMode() {
+      this.taskViewMode = this.taskViewMode === 'list' ? 'kanban' : 'list';
+      localStorage.setItem('taskViewMode', this.taskViewMode);
+    },
+
+    onDragStart(event, task) {
+      this.draggingTask = task;
+      event.dataTransfer.effectAllowed = 'move';
+      event.dataTransfer.setData('text/plain', task.id);
+      event.target.classList.add('dragging');
+    },
+
+    onDragEnd(event) {
+      event.target.classList.remove('dragging');
+      this.draggingTask = null;
+    },
+
+    onDragOver(event) {
+      event.preventDefault();
+      event.dataTransfer.dropEffect = 'move';
+    },
+
+    onDragEnter(event) {
+      event.target.closest('.kanban-column')?.classList.add('drag-over');
+    },
+
+    onDragLeave(event) {
+      if (!event.relatedTarget?.closest('.kanban-column')) {
+        event.target.closest('.kanban-column')?.classList.remove('drag-over');
+      }
+    },
+
+    async onDrop(event, newStatus) {
+      event.preventDefault();
+      event.target.closest('.kanban-column')?.classList.remove('drag-over');
+
+      if (!this.draggingTask || this.draggingTask.status === newStatus) return;
+
+      try {
+        await fetch(`${this.API_BASE}/tasks/${this.draggingTask.id}`, {
+          method: 'PATCH',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ status: newStatus })
+        });
+
+        this.draggingTask.status = newStatus;
+        this.showToast(`Tâche déplacée vers "${this.mapStatus(newStatus)}"`, 'success');
+      } catch (err) {
+        console.error('Drop error:', err);
+        this.showToast('Erreur lors du déplacement', 'error');
+      }
+    },
+
+    getTasksByStatus(status) {
+      return this.tasks.filter(t => t.status === status);
+    },
+
+    async importData(event) {
+      const file = event.target.files?.[0];
+      if (!file) return;
+
+      this.importExport.importing = true;
+      try {
+        const text = await file.text();
+        const data = JSON.parse(text);
+
+        if (!data.version) {
+          throw new Error('Format de fichier invalide');
+        }
+
+        if (data.quickNotes !== undefined) {
+          this.quickNotes = data.quickNotes;
+          localStorage.setItem('quickNotes', data.quickNotes);
+        }
+        if (data.favoriteLinks) {
+          this.favoriteLinks = data.favoriteLinks;
+          localStorage.setItem('favoriteLinks', JSON.stringify(data.favoriteLinks));
+        }
+        if (data.countdowns) {
+          this.countdowns = data.countdowns;
+          localStorage.setItem('countdowns', JSON.stringify(data.countdowns));
+        }
+        if (data.theme) {
+          this.theme = data.theme;
+          localStorage.setItem('theme', data.theme);
+          this.applyTheme();
+        }
+        if (data.filters) {
+          this.filters = data.filters;
+          this.saveFiltersToStorage();
+        }
+
+        if (data.tasks && data.tasks.length > 0) {
+          for (const task of data.tasks) {
+            try {
+              await fetch(`${this.API_BASE}/tasks`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                  title: task.title,
+                  description: task.description,
+                  priority: task.priority,
+                  due_date: task.due_date
+                })
+              });
+            } catch (e) {
+              console.warn('Could not import task:', task.title);
+            }
+          }
+          await this.loadTasks();
+        }
+
+        this.showToast('Données importées avec succès', 'success');
+        event.target.value = '';
+      } catch (err) {
+        console.error('Import error:', err);
+        this.showToast('Erreur lors de l\'import: ' + err.message, 'error');
+      } finally {
+        this.importExport.importing = false;
+      }
+    },
+
+    startClock() {
+      this.updateClock();
+      this.clock.interval = setInterval(() => this.updateClock(), 1000);
+    },
+
+    updateClock() {
+      const now = new Date();
+      this.clock.time = now.toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+      this.clock.date = now.toLocaleDateString('fr-FR', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' });
+    },
+
+    startPomodoro() {
+      if (this.pomodoro.isRunning) return;
+      this.pomodoro.isRunning = true;
+      this.pomodoro.interval = setInterval(() => this.tickPomodoro(), 1000);
+    },
+
+    pausePomodoro() {
+      this.pomodoro.isRunning = false;
+      if (this.pomodoro.interval) {
+        clearInterval(this.pomodoro.interval);
+        this.pomodoro.interval = null;
+      }
+    },
+
+    resetPomodoro() {
+      this.pausePomodoro();
+      if (this.pomodoro.mode === 'work') {
+        this.pomodoro.minutes = this.pomodoro.workDuration;
+      } else if (this.pomodoro.mode === 'break') {
+        this.pomodoro.minutes = this.pomodoro.breakDuration;
+      } else {
+        this.pomodoro.minutes = this.pomodoro.longBreakDuration;
+      }
+      this.pomodoro.seconds = 0;
+    },
+
+    tickPomodoro() {
+      if (this.pomodoro.seconds === 0) {
+        if (this.pomodoro.minutes === 0) {
+          this.pomodoroComplete();
+          return;
+        }
+        this.pomodoro.minutes--;
+        this.pomodoro.seconds = 59;
+      } else {
+        this.pomodoro.seconds--;
+      }
+    },
+
+    pomodoroComplete() {
+      this.pausePomodoro();
+      this.playNotificationSound();
+
+      if (this.pomodoro.mode === 'work') {
+        this.pomodoro.completedPomodoros++;
+        if (this.pomodoro.completedPomodoros % 4 === 0) {
+          this.pomodoro.mode = 'longBreak';
+          this.pomodoro.minutes = this.pomodoro.longBreakDuration;
+          this.showToast('Pomodoro terminé ! Longue pause de 15 min.', 'success');
+        } else {
+          this.pomodoro.mode = 'break';
+          this.pomodoro.minutes = this.pomodoro.breakDuration;
+          this.showToast('Pomodoro terminé ! Pause de 5 min.', 'success');
+        }
+      } else {
+        this.pomodoro.mode = 'work';
+        this.pomodoro.minutes = this.pomodoro.workDuration;
+        this.showToast('Pause terminée ! Au travail !', 'info');
+      }
+      this.pomodoro.seconds = 0;
+    },
+
+    skipPomodoro() {
+      this.pomodoroComplete();
+    },
+
+    playNotificationSound() {
+      try {
+        const audio = new Audio('data:audio/wav;base64,UklGRnoGAABXQVZFZm10IBAAAAABAAEAQB8AAEAfAAABAAgAZGF0YQoGAACBhYqFbF1fdH2Onp6Xkol7cGRbU09OSUlKS01RWF9nbXN4fYKGiYuMjIuKiIaDf3t2cWxnYl5aVlNRT05NS0pJSUlKS01QVFheZGpwdnx/g4aIiYqKiYiFgn55dXBqZmFdWVVSUE5NTExMTU5QVFleY2lundHl+goaIiYqKiYiFgX14c29qZWBcWFVSTk1MTExNTlBUWF1iZ21yd3uAhIeJioqJiIWBfXl0cGtmYV1ZVlJPTUxLTE1OUVVZXmNobXJ3fIGFiImKiomIhYF9eXRwbGdj');
+        audio.volume = 0.5;
+        audio.play();
+      } catch (e) {
+        console.log('Audio not supported');
+      }
+    },
+
+    formatPomodoro() {
+      const mins = String(this.pomodoro.minutes).padStart(2, '0');
+      const secs = String(this.pomodoro.seconds).padStart(2, '0');
+      return `${mins}:${secs}`;
+    },
+
+    getPomodoroLabel() {
+      const labels = {
+        work: 'Travail',
+        break: 'Pause',
+        longBreak: 'Longue pause'
+      };
+      return labels[this.pomodoro.mode];
+    },
+
     mapStatus(status) {
       const map = {
         'todo': 'À faire',
@@ -372,7 +991,7 @@ function app() {
       };
       return map[status] || status;
     },
-    
+
     loadFiltersFromStorage() {
       const saved = localStorage.getItem('taskFilters');
       if (saved) {
@@ -383,12 +1002,11 @@ function app() {
         }
       }
     },
-    
+
     saveFiltersToStorage() {
       localStorage.setItem('taskFilters', JSON.stringify(this.filters));
     },
-    
-    // Toast notifications
+
     showToast(message, type = 'info') {
       const icons = {
         success: '✅',
@@ -396,7 +1014,7 @@ function app() {
         info: 'ℹ️',
         warning: '⚠️'
       };
-      
+
       const toast = {
         id: this.toastId++,
         message,
@@ -404,14 +1022,14 @@ function app() {
         icon: icons[type] || icons.info,
         show: true
       };
-      
+
       this.toasts.push(toast);
-      
+
       setTimeout(() => {
         this.removeToast(toast.id);
       }, 4000);
     },
-    
+
     removeToast(id) {
       const index = this.toasts.findIndex(t => t.id === id);
       if (index > -1) {
@@ -422,18 +1040,17 @@ function app() {
       }
     },
 
-    // Hyperplanning Helpers
     isCurrentCourse(course) {
       const now = new Date();
       const currentHour = now.getHours();
       const currentMinute = now.getMinutes();
       const currentTime = currentHour * 60 + currentMinute;
-      
+
       const [startH, startM] = course.start.split(':').map(Number);
       const [endH, endM] = course.end.split(':').map(Number);
       const startTime = startH * 60 + startM;
       const endTime = endH * 60 + endM;
-      
+
       return currentTime >= startTime && currentTime < endTime;
     },
 
@@ -441,6 +1058,25 @@ function app() {
       if (value >= 16) return 'text-success';
       if (value >= 10) return 'text-warning';
       return 'text-danger';
+    },
+
+    formatDueDate(dateStr) {
+      if (!dateStr) return '';
+      const date = new Date(dateStr);
+      return date.toLocaleDateString('fr-FR', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' });
+    },
+
+    isOverdue(task) {
+      if (!task.due_date || task.status === 'done' || task.status === 'archived') return false;
+      return new Date(task.due_date) < new Date();
+    },
+
+    isDueSoon(task) {
+      if (!task.due_date || task.status === 'done' || task.status === 'archived') return false;
+      const dueDate = new Date(task.due_date);
+      const now = new Date();
+      const diff = dueDate - now;
+      return diff > 0 && diff < 24 * 60 * 60 * 1000;
     }
   };
 }

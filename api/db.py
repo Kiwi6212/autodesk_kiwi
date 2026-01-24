@@ -10,12 +10,10 @@ engine = create_engine(
 )
 
 def init_db() -> None:
-    """Crée toutes les tables"""
     SQLModel.metadata.create_all(engine)
 
 @contextmanager
 def get_session():
-    """Context manager pour sessions DB"""
     session = Session(engine, expire_on_commit=False)
     try:
         yield session

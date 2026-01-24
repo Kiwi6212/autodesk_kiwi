@@ -16,7 +16,6 @@ from logger import setup_logger
 router = APIRouter(prefix="/tasks", tags=["tasks"])
 logger = setup_logger("tasks")
 
-# Helper pour colonnes SQL
 TBL = cast(Any, Task).__table__.c
 
 
@@ -29,10 +28,8 @@ def list_tasks(
     limit: int = Query(50, ge=1, le=100),
     offset: int = Query(0, ge=0),
 ):
-    """Liste les tâches avec filtres, recherche et tri"""
     stmt = select(Task)
 
-    # Filtres
     if q:
         stmt = stmt.where(TBL.title.ilike(f"%{q}%"))
     if status:
@@ -44,7 +41,6 @@ def list_tasks(
             raise HTTPException(400, f"Invalid priority. Must be one of: {VALID_PRIORITY}")
         stmt = stmt.where(TBL.priority == priority)
 
-    # Tri
     sort_map = {
         "created_at": asc(TBL.created_at),
         "-created_at": desc(TBL.created_at),
@@ -57,10 +53,10 @@ def list_tasks(
         "title": asc(TBL.title),
         "-title": desc(TBL.title),
     }
-    
+
     if sort not in sort_map:
         raise HTTPException(400, f"Invalid sort. Must be one of: {list(sort_map.keys())}")
-    
+
     stmt = stmt.order_by(sort_map[sort])
     stmt = stmt.offset(offset).limit(limit)
 
@@ -72,14 +68,13 @@ def list_tasks(
 
 @router.post("", response_model=TaskOut, status_code=status.HTTP_201_CREATED)
 def create_task(payload: TaskCreate):
-    """Crée une nouvelle tâche"""
     task = Task(
         title=payload.title.strip(),
         description=payload.description.strip() if payload.description else None,
         priority=payload.priority,
         status="todo",
     )
-    
+
     with get_session() as session:
         session.add(task)
         session.commit()
@@ -90,7 +85,6 @@ def create_task(payload: TaskCreate):
 
 @router.get("/{task_id}", response_model=TaskOut)
 def get_task(task_id: int):
-    """Récupère une tâche par ID"""
     with get_session() as session:
         task = session.get(Task, task_id)
         if not task:
@@ -100,13 +94,11 @@ def get_task(task_id: int):
 
 @router.put("/{task_id}", response_model=TaskOut)
 def update_task(task_id: int, payload: TaskUpdate):
-    """Met à jour une tâche"""
     with get_session() as session:
         task = session.get(Task, task_id)
         if not task:
             raise TaskNotFoundException(task_id)
 
-        # Mise à jour des champs
         if payload.title is not None:
             task.title = payload.title.strip()
         if payload.description is not None:
@@ -116,8 +108,7 @@ def update_task(task_id: int, payload: TaskUpdate):
         if payload.status is not None:
             old_status = task.status
             task.status = payload.status
-            
-            # Marquer comme complétée
+
             if payload.status == "done" and old_status != "done":
                 task.completed_at = datetime.now(timezone.utc)
             elif payload.status != "done" and old_status == "done":
@@ -133,7 +124,6 @@ def update_task(task_id: int, payload: TaskUpdate):
 
 @router.delete("/{task_id}", status_code=status.HTTP_204_NO_CONTENT)
 def delete_task(task_id: int):
-    """Supprime une tâche"""
     with get_session() as session:
         task = session.get(Task, task_id)
         if not task:
@@ -145,39 +135,37 @@ def delete_task(task_id: int):
 
 @router.post("/bulk-delete", status_code=status.HTTP_204_NO_CONTENT)
 def bulk_delete_tasks(payload: BulkDeletePayload):
-    """Supprime plusieurs tâches"""
     with get_session() as session:
         stmt = select(Task).where(Task.id.in_(payload.ids))
         tasks = session.exec(stmt).all()
-        
+
         count = len(tasks)
         for task in tasks:
             session.delete(task)
-        
+
         session.commit()
         logger.info(f"Bulk deleted {count} tasks")
 
 
 @router.get("/stats/summary", response_model=dict)
 def get_stats():
-    """Statistiques des tâches"""
     with get_session() as session:
         total = session.exec(select(func.count(Task.id))).one()
-        
+
         by_status = {}
         for s in VALID_STATUS:
             count = session.exec(
                 select(func.count(Task.id)).where(Task.status == s)
             ).one()
             by_status[s] = count
-        
+
         by_priority = {}
         for p in VALID_PRIORITY:
             count = session.exec(
                 select(func.count(Task.id)).where(Task.priority == p)
             ).one()
             by_priority[p] = count
-        
+
         return {
             "total": total,
             "by_status": by_status,
