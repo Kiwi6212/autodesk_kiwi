@@ -57,9 +57,8 @@
       <button class="tab theme-toggle" @click="toggleFocusMode()" :class="{ active: focusMode }" title="Mode Focus">
         🎯
       </button>
-      <button class="tab theme-toggle" @click="toggleTheme()" :title="theme === 'dark' ? 'Mode clair' : 'Mode sombre'">
-        <span x-show="theme === 'dark'">☀️</span>
-        <span x-show="theme === 'light'">🌙</span>
+      <button class="tab theme-toggle" @click="toggleTheme()" :title="theme === 'auto' ? 'Mode: Auto (système)' : theme === 'dark' ? 'Mode: Sombre' : 'Mode: Clair'">
+        <span x-text="getThemeIcon()"></span>
       </button>
     </nav>
   </header>
@@ -67,7 +66,7 @@
   <main>
     
     
-    <section x-show="currentView === 'today'" class="view">
+    <section x-show="currentView === 'today'" x-transition:enter="view-enter" x-transition:leave="view-leave" class="view">
       <h2>📅 Résumé du jour</h2>
 
       
@@ -277,7 +276,7 @@
     </section>
 
 
-    <section x-show="currentView === 'tasks'" class="view">
+    <section x-show="currentView === 'tasks'" x-transition:enter="view-enter" x-transition:leave="view-leave" class="view">
       <h2>✅ Gestion des tâches</h2>
 
       
@@ -584,7 +583,7 @@
     </section>
 
     
-    <section x-show="currentView === 'weather'" class="view">
+    <section x-show="currentView === 'weather'" x-transition:enter="view-enter" x-transition:leave="view-leave" class="view">
       <h2>🌤️ Météo <span x-text="weather.location" style="color: var(--muted);"></span></h2>
       
       <div class="card" x-show="weather.current.temp">
@@ -617,7 +616,7 @@
     </section>
 
     
-    <section x-show="currentView === 'hyperplanning'" class="view">
+    <section x-show="currentView === 'hyperplanning'" x-transition:enter="view-enter" x-transition:leave="view-leave" class="view">
       <h2>🎓 Hyperplanning</h2>
       
       <div class="hp-grid">
@@ -750,7 +749,7 @@
     </section>
 
     
-    <section x-show="currentView === 'mail'" class="view">
+    <section x-show="currentView === 'mail'" x-transition:enter="view-enter" x-transition:leave="view-leave" class="view">
       <h2>📬 Proton Mail</h2>
 
       
@@ -883,7 +882,7 @@
     </section>
 
     
-    <section x-show="currentView === 'settings'" class="view">
+    <section x-show="currentView === 'settings'" x-transition:enter="view-enter" x-transition:leave="view-leave" class="view">
       <h2>⚙️ Paramètres</h2>
 
       

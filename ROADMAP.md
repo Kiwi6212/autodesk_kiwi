@@ -7,7 +7,7 @@ This document outlines the major future developments for AutoDesk Kiwi.
 - [x] **Due dates** for tasks
 - [x] **Customizable tags/categories** for tasks
 - [x] **PWA** (Progressive Web App) with offline support
-- [x] **Dark/Light mode** toggle
+- [x] **Dark/Light mode** toggle with automatic system detection
 - [x] **Spotify integration** with playback controls
 - [x] **Email integration** (Proton Mail via Bridge)
 - [x] **Email viewer** - click to open full email content
@@ -23,11 +23,9 @@ This document outlines the major future developments for AutoDesk Kiwi.
 - [x] **Focus mode** - hide distractions, keep essentials
 - [x] **Subtasks** - nested tasks with progress tracking
 - [x] **Lofi radio player** - Lofi Girl YouTube stream integration
+- [x] **Smooth view transitions** - animated transitions between views
 
 ## 📅 Short Term (Q1)
-
-- [ ] **UI/UX Improvements**:
-  - [ ] Add smoother transition animations between views.
 - [ ] **Task Features**:
   - [ ] Recurring tasks.
 - **Tech**:
@@ -57,7 +55,6 @@ This document outlines the major future developments for AutoDesk Kiwi.
 
 ## 💡 Random Ideas
 
-- Automatic "Dark/Light" mode based on system settings.
 - Voice command to add tasks.
 - Productivity analysis (progress charts).
 - Habit tracker.

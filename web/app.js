@@ -74,7 +74,8 @@ function app() {
       pollingInterval: null
     },
 
-    theme: localStorage.getItem('theme') || 'dark',
+    theme: localStorage.getItem('theme') || 'auto',
+    systemTheme: window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light',
 
     clock: {
       time: '',
@@ -128,7 +129,7 @@ function app() {
       }
 
       this.loadFiltersFromStorage();
-      this.applyTheme();
+      this.initTheme();
       this.startClock();
       await Promise.all([
         this.loadOverview(),
@@ -726,14 +727,38 @@ function app() {
       return `${mins}:${secs.toString().padStart(2, '0')}`;
     },
 
+    initTheme() {
+      // Listen for system theme changes
+      window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', (e) => {
+        this.systemTheme = e.matches ? 'dark' : 'light';
+        if (this.theme === 'auto') {
+          this.applyTheme();
+        }
+      });
+      this.applyTheme();
+    },
+
     applyTheme() {
-      document.documentElement.setAttribute('data-theme', this.theme);
+      const effectiveTheme = this.theme === 'auto' ? this.systemTheme : this.theme;
+      document.documentElement.setAttribute('data-theme', effectiveTheme);
     },
 
     toggleTheme() {
-      this.theme = this.theme === 'dark' ? 'light' : 'dark';
+      // Cycle: dark -> light -> auto
+      const themes = ['dark', 'light', 'auto'];
+      const currentIndex = themes.indexOf(this.theme);
+      this.theme = themes[(currentIndex + 1) % themes.length];
       localStorage.setItem('theme', this.theme);
       this.applyTheme();
+
+      const labels = { dark: 'Sombre', light: 'Clair', auto: 'Automatique' };
+      this.showToast(`Thème: ${labels[this.theme]}`, 'info');
+    },
+
+    getThemeIcon() {
+      if (this.theme === 'auto') return '🔄';
+      if (this.theme === 'dark') return '🌙';
+      return '☀️';
     },
 
     toggleFocusMode() {
