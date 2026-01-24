@@ -750,11 +750,11 @@ function app() {
     },
 
     ambientSounds: [
-      { id: 'rain', name: '🌧️ Pluie', url: 'https://cdn.pixabay.com/audio/2022/05/16/audio_1333dfb409.mp3' },
-      { id: 'forest', name: '🌲 Forêt', url: 'https://cdn.pixabay.com/audio/2022/03/10/audio_4dedf5bf94.mp3' },
-      { id: 'fire', name: '🔥 Feu de cheminée', url: 'https://cdn.pixabay.com/audio/2021/08/09/audio_a7834d239a.mp3' },
-      { id: 'ocean', name: '🌊 Océan', url: 'https://cdn.pixabay.com/audio/2022/04/27/audio_67bcb99019.mp3' },
-      { id: 'lofi', name: '🎵 Lo-Fi', url: 'https://cdn.pixabay.com/audio/2022/11/16/audio_11f8186715.mp3' }
+      { id: 'rain', name: '🌧️ Pluie', url: 'https://assets.mixkit.co/active_storage/sfx/2515/2515-preview.mp3' },
+      { id: 'forest', name: '🌲 Forêt', url: 'https://assets.mixkit.co/active_storage/sfx/2466/2466-preview.mp3' },
+      { id: 'fire', name: '🔥 Feu', url: 'https://assets.mixkit.co/active_storage/sfx/2502/2502-preview.mp3' },
+      { id: 'ocean', name: '🌊 Océan', url: 'https://assets.mixkit.co/active_storage/sfx/2467/2467-preview.mp3' },
+      { id: 'wind', name: '💨 Vent', url: 'https://assets.mixkit.co/active_storage/sfx/2468/2468-preview.mp3' }
     ],
 
     playAmbientSound(sound) {
@@ -772,7 +772,10 @@ function app() {
       this.ambientSound.audio = new Audio(sound.url);
       this.ambientSound.audio.loop = true;
       this.ambientSound.audio.volume = this.ambientSound.volume;
-      this.ambientSound.audio.play();
+      this.ambientSound.audio.play().catch(err => {
+        console.error('Audio play error:', err);
+        this.showToast('Impossible de jouer le son', 'error');
+      });
       this.ambientSound.current = sound.id;
       this.ambientSound.playing = true;
     },
