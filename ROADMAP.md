@@ -10,6 +10,7 @@ This document outlines the major future developments for AutoDesk Kiwi.
 - [x] **Dark/Light mode** toggle
 - [x] **Spotify integration** with playback controls
 - [x] **Email integration** (Proton Mail via Bridge)
+- [x] **Email viewer** - click to open full email content
 - [x] **Pomodoro timer** widget
 - [x] **Quick notes** widget
 - [x] **Favorite links** widget
@@ -19,14 +20,15 @@ This document outlines the major future developments for AutoDesk Kiwi.
 - [x] **Keyboard shortcuts** (N: new task, /: search, Esc: close)
 - [x] **Dynamic quotes** from API
 - [x] **Hyperplanning integration** (courses, grades)
+- [x] **Focus mode** - hide distractions, keep essentials
+- [x] **Subtasks** - nested tasks with progress tracking
+- [x] **Ambient sounds** - rain, forest, fire, ocean, lo-fi
 
 ## 📅 Short Term (Q1)
 
 - [ ] **UI/UX Improvements**:
   - [ ] Add smoother transition animations between views.
-  - [ ] Implement a "Focus" mode to hide distractions.
 - [ ] **Task Features**:
-  - [ ] Support for subtasks.
   - [ ] Recurring tasks.
 - **Tech**:
   - [ ] Add unit tests for the backend (`pytest`).
@@ -60,5 +62,4 @@ This document outlines the major future developments for AutoDesk Kiwi.
 - Productivity analysis (progress charts).
 - Habit tracker.
 - Study statistics with time tracking.
-- Ambient sounds for focus (lo-fi, rain...).
 - Gamification (streaks, badges, XP).
