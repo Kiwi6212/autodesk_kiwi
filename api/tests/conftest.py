@@ -1,32 +1,49 @@
 """Pytest fixtures for API testing."""
 
 import os
+import sys
+
+# Add api directory to path
+sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+
+# Set test environment BEFORE any imports
+os.environ["DATABASE_URL"] = "sqlite:///./test_data.db"
+os.environ["DEBUG"] = "false"
+
 import pytest
 from fastapi.testclient import TestClient
-from sqlmodel import SQLModel, create_engine, Session
+from sqlmodel import SQLModel
 
-# Set test environment before importing app
-os.environ["DATABASE_URL"] = "sqlite:///./test.db"
-os.environ["DEBUG"] = "false"
+# Clear any cached settings
+from config import get_settings
+get_settings.cache_clear()
 
 from main import app
 from db import engine
 
 
+@pytest.fixture(scope="function", autouse=True)
+def setup_database():
+    """Create fresh database tables for each test."""
+    SQLModel.metadata.create_all(engine)
+    yield
+    SQLModel.metadata.drop_all(engine)
+    # Clean up test database file
+    if os.path.exists("./test_data.db"):
+        try:
+            os.remove("./test_data.db")
+        except:
+            pass
+
+
 @pytest.fixture(scope="function")
 def client():
-    """Create a test client with a fresh database for each test."""
-    # Create all tables
-    SQLModel.metadata.create_all(engine)
-
+    """Create a test client."""
     with TestClient(app) as test_client:
         yield test_client
 
-    # Drop all tables after test
-    SQLModel.metadata.drop_all(engine)
 
-
-@pytest.fixture(scope="function")
+@pytest.fixture
 def sample_task():
     """Sample task data for testing."""
     return {
@@ -36,7 +53,7 @@ def sample_task():
     }
 
 
-@pytest.fixture(scope="function")
+@pytest.fixture
 def sample_task_high_priority():
     """Sample high priority task data."""
     return {
@@ -46,7 +63,7 @@ def sample_task_high_priority():
     }
 
 
-@pytest.fixture(scope="function")
+@pytest.fixture
 def sample_task_with_due_date():
     """Sample task with due date."""
     return {
@@ -56,7 +73,7 @@ def sample_task_with_due_date():
     }
 
 
-@pytest.fixture(scope="function")
+@pytest.fixture
 def sample_task_with_tags():
     """Sample task with tags."""
     return {
@@ -66,7 +83,7 @@ def sample_task_with_tags():
     }
 
 
-@pytest.fixture(scope="function")
+@pytest.fixture
 def sample_task_recurring():
     """Sample recurring task."""
     return {

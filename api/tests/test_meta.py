@@ -1,6 +1,5 @@
 """Unit tests for Meta API endpoints."""
 
-import pytest
 from fastapi import status
 
 
@@ -9,11 +8,13 @@ class TestMetaEndpoints:
 
     def test_health_check(self, client):
         """Test the health check endpoint."""
-        response = client.get("/health")
+        response = client.get("/meta/health")
 
         assert response.status_code == status.HTTP_200_OK
         data = response.json()
         assert data["status"] == "healthy"
+        assert "timestamp" in data
+        assert "version" in data
 
     def test_get_overview(self, client):
         """Test the overview endpoint."""
@@ -21,8 +22,8 @@ class TestMetaEndpoints:
 
         assert response.status_code == status.HTTP_200_OK
         data = response.json()
-        # Overview should contain quote and other info
-        assert "quote" in data or "greeting" in data
+        assert "quote" in data
+        assert "quote_author" in data
 
     def test_get_quote(self, client):
         """Test the quote endpoint."""
@@ -30,5 +31,5 @@ class TestMetaEndpoints:
 
         assert response.status_code == status.HTTP_200_OK
         data = response.json()
-        # Should have content and optionally author
         assert "content" in data
+        assert "author" in data

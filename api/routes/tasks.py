@@ -29,6 +29,7 @@ def task_to_out(task: Task, subtasks: List[Task] = None) -> TaskOut:
         due_date=task.due_date,
         tags=task.tags,
         parent_id=task.parent_id,
+        recurrence=task.recurrence,
         created_at=task.created_at,
         updated_at=task.updated_at,
         completed_at=task.completed_at,
@@ -115,6 +116,7 @@ def create_task(payload: TaskCreate):
             parent_id=payload.parent_id,
             due_date=payload.due_date,
             tags=payload.tags,
+            recurrence=payload.recurrence,
         )
 
         session.add(task)
@@ -162,6 +164,8 @@ def update_task(task_id: int, payload: TaskUpdate):
             task.due_date = payload.due_date
         if payload.tags is not None:
             task.tags = payload.tags
+        if payload.recurrence is not None:
+            task.recurrence = payload.recurrence
 
         task.updated_at = datetime.now(timezone.utc)
         session.add(task)
