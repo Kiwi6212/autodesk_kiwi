@@ -17,6 +17,7 @@
   <link rel="stylesheet" href="style.css">
   
   
+  <script src="https://cdn.jsdelivr.net/npm/sortablejs@1.15.0/Sortable.min.js"></script>
   <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
 </head>
 <body x-data="app()" x-init="init()">
@@ -1025,7 +1026,42 @@
     <section x-show="currentView === 'settings'" x-transition:enter="view-enter" x-transition:leave="view-leave" class="view">
       <h2>⚙️ Paramètres</h2>
 
-      
+      <!-- Theme customization -->
+      <div class="card">
+        <h3>🎨 Personnalisation</h3>
+
+        <div style="margin-bottom: 20px;">
+          <p style="font-weight: 500; margin-bottom: 10px;">Mode d'affichage</p>
+          <div style="display: flex; gap: 10px; flex-wrap: wrap;">
+            <button class="btn" :class="{ 'primary': theme === 'dark' }" @click="theme = 'dark'; localStorage.setItem('theme', 'dark'); applyTheme();">
+              🌙 Sombre
+            </button>
+            <button class="btn" :class="{ 'primary': theme === 'light' }" @click="theme = 'light'; localStorage.setItem('theme', 'light'); applyTheme();">
+              ☀️ Clair
+            </button>
+            <button class="btn" :class="{ 'primary': theme === 'auto' }" @click="theme = 'auto'; localStorage.setItem('theme', 'auto'); applyTheme();">
+              🔄 Auto (système)
+            </button>
+          </div>
+        </div>
+
+        <div>
+          <p style="font-weight: 500; margin-bottom: 10px;">Couleur d'accent</p>
+          <div class="theme-picker">
+            <template x-for="color in accentColors" :key="color">
+              <button
+                class="color-swatch"
+                :class="[color, { 'active': accentColor === color }]"
+                @click="setAccentColor(color)"
+                :title="color"
+              >
+                <span x-show="accentColor === color">✓</span>
+              </button>
+            </template>
+          </div>
+        </div>
+      </div>
+
       <div class="card">
         <h3>💾 Sauvegarde des données</h3>
         <p style="color: var(--muted); margin-bottom: 16px;">
@@ -1049,13 +1085,12 @@
 
       <div class="card">
         <h3>ℹ️ Informations</h3>
-        <p><strong>Version:</strong> 1.0.0</p>
+        <p><strong>Version:</strong> 1.1.0</p>
         <p><strong>Mode:</strong> Local (SQLite)</p>
         <p><strong>API:</strong> <code x-text="API_BASE"></code></p>
         <hr style="border: 1px solid var(--border); margin: 20px 0;">
         <p style="color: var(--muted);">
-          🚀 Fonctionnalités à venir : thèmes personnalisés, authentification,
-          synchronisation cloud, notifications push...
+          Nouvelles fonctionnalités: thèmes personnalisables, widgets réorganisables, tests unitaires, linter ruff.
         </p>
       </div>
     </section>

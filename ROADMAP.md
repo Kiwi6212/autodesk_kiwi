@@ -27,11 +27,15 @@ This document outlines the major future developments for AutoDesk Kiwi.
 - [x] **Gamification** - XP system, levels, streaks, and unlockable badges
 - [x] **Habit tracker** - daily habit tracking with 7-day calendar grid
 - [x] **Recurring tasks** - daily, weekly, monthly task recurrence with auto-recreation
+- [x] **Unit tests** - pytest tests for backend API
+- [x] **Linter/formatter** - ruff configuration for code quality
+- [x] **Customizable themes** - 8 accent colors (blue, purple, green, orange, pink, cyan, red, yellow)
+- [x] **Widget infrastructure** - CSS and JS support for draggable widgets
 
 ## 📅 Short Term (Q1)
 - **Tech**:
-  - [ ] Add unit tests for the backend (`pytest`).
-  - [ ] Set up a linter/formatter (`ruff` or `black`).
+  - [x] Add unit tests for the backend (`pytest`).
+  - [x] Set up a linter/formatter (`ruff` or `black`).
 
 ## 📅 Medium Term (Q2)
 
@@ -41,8 +45,8 @@ This document outlines the major future developments for AutoDesk Kiwi.
 - [ ] **Cloud Synchronization**:
   - [ ] Ability to save the database to the cloud (e.g., S3, Google Drive).
 - [ ] **Customization**:
-  - [ ] Customizable themes (colors, fonts).
-  - [ ] Configurable/draggable widgets on the dashboard.
+  - [x] Customizable themes (colors, fonts).
+  - [x] Configurable/draggable widgets on the dashboard.
 
 ## 📅 Long Term (Q3+)
 

@@ -76,6 +76,14 @@ function app() {
 
     theme: localStorage.getItem('theme') || 'auto',
     systemTheme: window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light',
+    accentColor: localStorage.getItem('accentColor') || 'blue',
+
+    // Available accent colors
+    accentColors: ['blue', 'purple', 'green', 'orange', 'pink', 'cyan', 'red', 'yellow'],
+
+    // Widget order for draggable widgets
+    widgetOrder: JSON.parse(localStorage.getItem('widgetOrder') || '["clock", "pomodoro", "quote", "notes", "links", "countdowns", "stats", "gamification", "habits", "spotify", "lofi"]'),
+    collapsedWidgets: JSON.parse(localStorage.getItem('collapsedWidgets') || '[]'),
 
     clock: {
       time: '',
@@ -798,11 +806,42 @@ function app() {
         }
       });
       this.applyTheme();
+      this.applyAccentColor();
     },
 
     applyTheme() {
       const effectiveTheme = this.theme === 'auto' ? this.systemTheme : this.theme;
       document.documentElement.setAttribute('data-theme', effectiveTheme);
+    },
+
+    applyAccentColor() {
+      document.documentElement.setAttribute('data-accent', this.accentColor);
+    },
+
+    setAccentColor(color) {
+      this.accentColor = color;
+      localStorage.setItem('accentColor', color);
+      this.applyAccentColor();
+      this.showToast(`Couleur d'accent: ${color}`, 'info');
+    },
+
+    // Widget management
+    saveWidgetOrder() {
+      localStorage.setItem('widgetOrder', JSON.stringify(this.widgetOrder));
+    },
+
+    toggleWidgetCollapse(widgetId) {
+      const idx = this.collapsedWidgets.indexOf(widgetId);
+      if (idx > -1) {
+        this.collapsedWidgets.splice(idx, 1);
+      } else {
+        this.collapsedWidgets.push(widgetId);
+      }
+      localStorage.setItem('collapsedWidgets', JSON.stringify(this.collapsedWidgets));
+    },
+
+    isWidgetCollapsed(widgetId) {
+      return this.collapsedWidgets.includes(widgetId);
     },
 
     toggleTheme() {
