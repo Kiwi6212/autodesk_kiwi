@@ -129,6 +129,17 @@ function app() {
       show: false
     },
 
+    // Analytics data
+    analytics: {
+      daily: [],
+      weekly: [],
+      byStatus: {},
+      byPriority: {},
+      summary: {},
+      avgCompletionTime: null
+    },
+    analyticsCharts: {},
+
     // Gamification system
     gamification: JSON.parse(localStorage.getItem('gamification') || JSON.stringify({
       xp: 0,
@@ -1584,6 +1595,220 @@ function app() {
         });
       }
       return days;
+    },
+
+    // ============ ANALYTICS ============
+
+    async loadAnalytics() {
+      try {
+        const [daily, weekly, byStatus, byPriority, summary, avgTime] = await Promise.all([
+          this.fetchJSON(`${this.API_BASE}/analytics/tasks/daily?days=30`),
+          this.fetchJSON(`${this.API_BASE}/analytics/tasks/weekly?weeks=8`),
+          this.fetchJSON(`${this.API_BASE}/analytics/tasks/by-status`),
+          this.fetchJSON(`${this.API_BASE}/analytics/tasks/by-priority`),
+          this.fetchJSON(`${this.API_BASE}/analytics/productivity/summary`),
+          this.fetchJSON(`${this.API_BASE}/analytics/tasks/average-completion-time`)
+        ]);
+
+        this.analytics.daily = daily;
+        this.analytics.weekly = weekly;
+        this.analytics.byStatus = byStatus;
+        this.analytics.byPriority = byPriority;
+        this.analytics.summary = summary;
+        this.analytics.avgCompletionTime = avgTime.average_hours;
+
+        // Render charts after data is loaded
+        this.$nextTick(() => {
+          this.renderDailyChart();
+          this.renderStatusChart();
+          this.renderPriorityChart();
+          this.renderWeeklyChart();
+        });
+      } catch (err) {
+        console.error('Analytics error:', err);
+        this.showToast('Erreur chargement statistiques', 'error');
+      }
+    },
+
+    renderDailyChart() {
+      const ctx = document.getElementById('dailyChart');
+      if (!ctx) return;
+
+      // Destroy existing chart
+      if (this.analyticsCharts.daily) {
+        this.analyticsCharts.daily.destroy();
+      }
+
+      const labels = this.analytics.daily.map(d => {
+        const date = new Date(d.date);
+        return date.toLocaleDateString('fr-FR', { day: 'numeric', month: 'short' });
+      });
+      const data = this.analytics.daily.map(d => d.completed);
+
+      this.analyticsCharts.daily = new Chart(ctx, {
+        type: 'line',
+        data: {
+          labels,
+          datasets: [{
+            label: 'Tâches terminées',
+            data,
+            borderColor: getComputedStyle(document.documentElement).getPropertyValue('--accent').trim(),
+            backgroundColor: getComputedStyle(document.documentElement).getPropertyValue('--ring').trim(),
+            fill: true,
+            tension: 0.4
+          }]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          plugins: {
+            legend: { display: false }
+          },
+          scales: {
+            y: {
+              beginAtZero: true,
+              ticks: { stepSize: 1, color: getComputedStyle(document.documentElement).getPropertyValue('--muted').trim() },
+              grid: { color: getComputedStyle(document.documentElement).getPropertyValue('--border').trim() }
+            },
+            x: {
+              ticks: { color: getComputedStyle(document.documentElement).getPropertyValue('--muted').trim() },
+              grid: { display: false }
+            }
+          }
+        }
+      });
+    },
+
+    renderStatusChart() {
+      const ctx = document.getElementById('statusChart');
+      if (!ctx) return;
+
+      if (this.analyticsCharts.status) {
+        this.analyticsCharts.status.destroy();
+      }
+
+      const statusLabels = { todo: 'À faire', doing: 'En cours', done: 'Terminées', archived: 'Archivées' };
+      const statusColors = { todo: '#4aa3ff', doing: '#fbbf24', done: '#4ade80', archived: '#6b7280' };
+
+      const labels = Object.keys(this.analytics.byStatus).map(s => statusLabels[s] || s);
+      const data = Object.values(this.analytics.byStatus);
+      const colors = Object.keys(this.analytics.byStatus).map(s => statusColors[s] || '#888');
+
+      this.analyticsCharts.status = new Chart(ctx, {
+        type: 'doughnut',
+        data: {
+          labels,
+          datasets: [{
+            data,
+            backgroundColor: colors,
+            borderWidth: 0
+          }]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          plugins: {
+            legend: {
+              position: 'bottom',
+              labels: { color: getComputedStyle(document.documentElement).getPropertyValue('--text').trim() }
+            }
+          }
+        }
+      });
+    },
+
+    renderPriorityChart() {
+      const ctx = document.getElementById('priorityChart');
+      if (!ctx) return;
+
+      if (this.analyticsCharts.priority) {
+        this.analyticsCharts.priority.destroy();
+      }
+
+      const priorityLabels = { low: 'Basse', normal: 'Normale', high: 'Haute' };
+      const priorityColors = { low: '#4ade80', normal: '#4aa3ff', high: '#ff5d72' };
+
+      const labels = Object.keys(this.analytics.byPriority).map(p => priorityLabels[p] || p);
+      const data = Object.values(this.analytics.byPriority);
+      const colors = Object.keys(this.analytics.byPriority).map(p => priorityColors[p] || '#888');
+
+      this.analyticsCharts.priority = new Chart(ctx, {
+        type: 'doughnut',
+        data: {
+          labels,
+          datasets: [{
+            data,
+            backgroundColor: colors,
+            borderWidth: 0
+          }]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          plugins: {
+            legend: {
+              position: 'bottom',
+              labels: { color: getComputedStyle(document.documentElement).getPropertyValue('--text').trim() }
+            }
+          }
+        }
+      });
+    },
+
+    renderWeeklyChart() {
+      const ctx = document.getElementById('weeklyChart');
+      if (!ctx) return;
+
+      if (this.analyticsCharts.weekly) {
+        this.analyticsCharts.weekly.destroy();
+      }
+
+      const labels = this.analytics.weekly.map(w => `Sem ${w.week}`);
+      const data = this.analytics.weekly.map(w => w.completed);
+
+      this.analyticsCharts.weekly = new Chart(ctx, {
+        type: 'bar',
+        data: {
+          labels,
+          datasets: [{
+            label: 'Tâches terminées',
+            data,
+            backgroundColor: getComputedStyle(document.documentElement).getPropertyValue('--accent').trim(),
+            borderRadius: 6
+          }]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          plugins: {
+            legend: { display: false }
+          },
+          scales: {
+            y: {
+              beginAtZero: true,
+              ticks: { stepSize: 1, color: getComputedStyle(document.documentElement).getPropertyValue('--muted').trim() },
+              grid: { color: getComputedStyle(document.documentElement).getPropertyValue('--border').trim() }
+            },
+            x: {
+              ticks: { color: getComputedStyle(document.documentElement).getPropertyValue('--muted').trim() },
+              grid: { display: false }
+            }
+          }
+        }
+      });
+    },
+
+    formatAvgTime(hours) {
+      if (hours === null || hours === undefined) return 'N/A';
+      if (hours < 1) {
+        return `${Math.round(hours * 60)} min`;
+      } else if (hours < 24) {
+        return `${hours.toFixed(1)} h`;
+      } else {
+        const days = Math.floor(hours / 24);
+        const remainingHours = Math.round(hours % 24);
+        return `${days}j ${remainingHours}h`;
+      }
     }
   };
 }

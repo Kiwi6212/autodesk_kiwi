@@ -1,0 +1,27 @@
+version: "3.8"
+
+services:
+  kiwi:
+    build: .
+    container_name: autodesk-kiwi
+    ports:
+      - "8000:8000"
+    volumes:
+      # Persist database
+      - kiwi-data:/app/data
+      # Optional: mount .env file
+      - ./.env:/app/api/.env:ro
+    environment:
+      - DATABASE_URL=sqlite:////app/data/data.db
+      - DEBUG=false
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "python", "-c", "import requests; requests.get('http://localhost:8000/meta/health')"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 10s
+
+volumes:
+  kiwi-data:
+    driver: local

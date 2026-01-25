@@ -12,7 +12,7 @@ from config import get_settings
 from db import init_db
 from exceptions import AppException, app_exception_handler, general_exception_handler
 from logger import setup_logger
-from routes import email, hyperplanning, integrations, meta, spotify, tasks
+from routes import analytics, email, hyperplanning, integrations, meta, spotify, tasks
 
 settings = get_settings()
 logger = setup_logger("main")
@@ -63,6 +63,7 @@ app.include_router(integrations.router)
 app.include_router(hyperplanning.router)
 app.include_router(email.router)
 app.include_router(spotify.router)
+app.include_router(analytics.router)
 
 if getattr(sys, 'frozen', False):
     base_path = sys._MEIPASS

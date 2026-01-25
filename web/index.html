@@ -18,6 +18,7 @@
   
   
   <script src="https://cdn.jsdelivr.net/npm/sortablejs@1.15.0/Sortable.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
   <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
 </head>
 <body x-data="app()" x-init="init()">
@@ -51,6 +52,9 @@
       </button>
       <button class="tab" :class="{ active: currentView === 'mail' }" @click="currentView = 'mail'">
         📬 Mail
+      </button>
+      <button class="tab" :class="{ active: currentView === 'analytics' }" @click="currentView = 'analytics'; loadAnalytics()">
+        📊 Stats
       </button>
       <button class="tab" :class="{ active: currentView === 'settings' }" @click="currentView = 'settings'">
         ⚙️ Paramètres
@@ -1022,7 +1026,86 @@
       </div>
     </section>
 
-    
+    <!-- ANALYTICS VIEW -->
+    <section x-show="currentView === 'analytics'" x-transition:enter="view-enter" x-transition:leave="view-leave" class="view">
+      <h2>📊 Statistiques de productivité</h2>
+
+      <!-- Summary Cards -->
+      <div class="analytics-summary">
+        <div class="analytics-card">
+          <div class="analytics-value" x-text="analytics.summary?.today_completed || 0"></div>
+          <div class="analytics-label">Aujourd'hui</div>
+        </div>
+        <div class="analytics-card">
+          <div class="analytics-value" x-text="analytics.summary?.week_completed || 0"></div>
+          <div class="analytics-label">Cette semaine</div>
+        </div>
+        <div class="analytics-card">
+          <div class="analytics-value" x-text="analytics.summary?.month_completed || 0"></div>
+          <div class="analytics-label">Ce mois</div>
+        </div>
+        <div class="analytics-card">
+          <div class="analytics-value" x-text="(analytics.summary?.completion_rate || 0) + '%'"></div>
+          <div class="analytics-label">Taux global</div>
+        </div>
+      </div>
+
+      <!-- Charts Grid -->
+      <div class="charts-grid">
+        <!-- Daily completion chart -->
+        <div class="chart-card">
+          <h3>📈 Tâches terminées (30 derniers jours)</h3>
+          <div class="chart-container">
+            <canvas id="dailyChart"></canvas>
+          </div>
+        </div>
+
+        <!-- Status distribution -->
+        <div class="chart-card">
+          <h3>📋 Répartition par statut</h3>
+          <div class="chart-container chart-small">
+            <canvas id="statusChart"></canvas>
+          </div>
+        </div>
+
+        <!-- Priority distribution -->
+        <div class="chart-card">
+          <h3>🎯 Répartition par priorité</h3>
+          <div class="chart-container chart-small">
+            <canvas id="priorityChart"></canvas>
+          </div>
+        </div>
+
+        <!-- Weekly trend -->
+        <div class="chart-card">
+          <h3>📅 Tendance hebdomadaire</h3>
+          <div class="chart-container">
+            <canvas id="weeklyChart"></canvas>
+          </div>
+        </div>
+      </div>
+
+      <!-- Additional Stats -->
+      <div class="card" style="margin-top: 20px;">
+        <h3>📊 Statistiques détaillées</h3>
+        <div class="stats-details">
+          <div class="stat-row">
+            <span>Temps moyen de complétion:</span>
+            <strong x-text="formatAvgTime(analytics.avgCompletionTime)"></strong>
+          </div>
+          <div class="stat-row">
+            <span>Total de tâches créées:</span>
+            <strong x-text="analytics.summary?.total_tasks || 0"></strong>
+          </div>
+          <div class="stat-row">
+            <span>Tâches en retard:</span>
+            <strong x-text="analytics.summary?.overdue || 0"></strong>
+          </div>
+        </div>
+      </div>
+    </section>
+
+
     <section x-show="currentView === 'settings'" x-transition:enter="view-enter" x-transition:leave="view-leave" class="view">
       <h2>⚙️ Paramètres</h2>
 
