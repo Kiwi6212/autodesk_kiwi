@@ -47,6 +47,7 @@ def list_tasks(
     q: str | None = Query(None, max_length=200, description="Search in title"),
     status: str | None = Query(None, description=f"Filter by status: {VALID_STATUS}"),
     priority: str | None = Query(None, description=f"Filter by priority: {VALID_PRIORITY}"),
+    tags: str | None = Query(None, max_length=200, description="Filter by tag (comma-separated for OR)"),
     sort: str = Query("-created_at", description="Sort field"),
     limit: int = Query(50, ge=1, le=100),
     offset: int = Query(0, ge=0),
@@ -64,6 +65,12 @@ def list_tasks(
         if priority not in VALID_PRIORITY:
             raise HTTPException(400, f"Invalid priority. Must be one of: {VALID_PRIORITY}")
         stmt = stmt.where(TBL.priority == priority)
+    if tags:
+        # Filter tasks that contain any of the specified tags
+        tag_list = [t.strip() for t in tags.split(",")]
+        tag_conditions = [TBL.tags.ilike(f"%{tag}%") for tag in tag_list]
+        from sqlalchemy import or_
+        stmt = stmt.where(or_(*tag_conditions))
 
     sort_map = {
         "created_at": asc(TBL.created_at),
@@ -243,3 +250,22 @@ def get_stats():
             "by_status": by_status,
             "by_priority": by_priority,
         }
+
+
+@router.get("/tags/all", response_model=list[str])
+def get_all_tags():
+    """Get all unique tags used across all tasks"""
+    with get_session() as session:
+        stmt = select(Task.tags).where(Task.tags.is_not(None), Task.tags != "")
+        tags_results = list(session.exec(stmt))
+
+        # Extract unique tags from comma-separated strings
+        unique_tags = set()
+        for tags_str in tags_results:
+            if tags_str:
+                tags_list = [t.strip() for t in tags_str.split(",") if t.strip()]
+                unique_tags.update(tags_list)
+
+        sorted_tags = sorted(list(unique_tags))
+        logger.info(f"Found {len(sorted_tags)} unique tags")
+        return sorted_tags

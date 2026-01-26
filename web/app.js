@@ -19,7 +19,7 @@ function app() {
     editingTask: null,
     filters: {
       q: '',
-      tag: '',
+      tags: '',
       status: '',
       priority: '',
       sort: '-created_at'
@@ -197,7 +197,8 @@ function app() {
         this.loadStats(),
         this.loadHyperplanning(),
         this.loadEmail(),
-        this.loadSpotify()
+        this.loadSpotify(),
+        this.loadAvailableTags()
       ]);
 
       this.$watch('currentView', (view) => {
@@ -320,7 +321,7 @@ function app() {
           limit: 50,
           offset: 0
         });
-        if (!this.filters.tag) params.delete('tag');
+        if (!this.filters.tags) params.delete('tags');
         this.tasks = await this.fetchJSON(`${this.API_BASE}/tasks?${params}`);
         this.extractTags();
         this.saveFiltersToStorage();
@@ -378,6 +379,40 @@ function app() {
     getTaskTags(task) {
       if (!task.tags) return [];
       return task.tags.split(',').map(t => t.trim()).filter(t => t);
+    },
+
+    getTagClass(tag) {
+      const tagLower = tag.toLowerCase().trim();
+      const tagMap = {
+        'travail': 'tag-travail',
+        'work': 'tag-travail',
+        'personnel': 'tag-personnel',
+        'personal': 'tag-personnel',
+        'urgent': 'tag-urgent',
+        'etudes': 'tag-etudes',
+        'études': 'tag-etudes',
+        'study': 'tag-etudes',
+        'sante': 'tag-sante',
+        'santé': 'tag-sante',
+        'health': 'tag-sante',
+        'loisirs': 'tag-loisirs',
+        'hobby': 'tag-loisirs',
+        'courses': 'tag-courses',
+        'shopping': 'tag-courses',
+        'projets': 'tag-projets',
+        'project': 'tag-projets',
+        'projects': 'tag-projets'
+      };
+      return tagMap[tagLower] || 'tag-default';
+    },
+
+    async loadAvailableTags() {
+      try {
+        const tags = await this.fetchJSON(`${this.API_BASE}/tasks/tags/all`);
+        this.availableTags = tags;
+      } catch (err) {
+        console.error('Error loading tags:', err);
+      }
     },
 
     openEditTask(task) {

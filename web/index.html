@@ -462,7 +462,7 @@
           <option value="normal">Normal</option>
           <option value="high">High</option>
         </select>
-        <select x-model="filters.tag" @change="loadTasks()" x-show="availableTags.length">
+        <select x-model="filters.tags" @change="loadTasks()" x-show="availableTags.length">
           <option value="">Tous tags</option>
           <template x-for="tag in availableTags" :key="tag">
             <option :value="tag" x-text="tag"></option>
@@ -514,7 +514,7 @@
                     📅 <span x-text="formatDueDate(task.due_date)"></span>
                   </span>
                   <template x-for="tag in getTaskTags(task)" :key="tag">
-                    <span class="tag-badge" x-text="tag"></span>
+                    <span class="tag" :class="getTagClass(tag)" x-text="tag"></span>
                   </template>
                   <span x-show="task.recurrence" class="recurrence-badge" :title="getRecurrenceLabel(task.recurrence)">
                     🔄 <span x-text="getRecurrenceLabel(task.recurrence)"></span>
@@ -592,7 +592,7 @@
                     📅 <span x-text="formatDueDate(task.due_date)"></span>
                   </span>
                   <template x-for="tag in getTaskTags(task)" :key="tag">
-                    <span class="tag-badge" x-text="tag"></span>
+                    <span class="tag" :class="getTagClass(tag)" x-text="tag"></span>
                   </template>
                 </div>
               </div>
@@ -624,7 +624,7 @@
                     📅 <span x-text="formatDueDate(task.due_date)"></span>
                   </span>
                   <template x-for="tag in getTaskTags(task)" :key="tag">
-                    <span class="tag-badge" x-text="tag"></span>
+                    <span class="tag" :class="getTagClass(tag)" x-text="tag"></span>
                   </template>
                 </div>
               </div>
@@ -653,7 +653,7 @@
                   <span class="badge" :class="task.priority" x-text="task.priority"></span>
                   <span x-show="task.recurrence" class="recurrence-badge-small" title="Récurrent">🔄</span>
                   <template x-for="tag in getTaskTags(task)" :key="tag">
-                    <span class="tag-badge" x-text="tag"></span>
+                    <span class="tag" :class="getTagClass(tag)" x-text="tag"></span>
                   </template>
                 </div>
               </div>
