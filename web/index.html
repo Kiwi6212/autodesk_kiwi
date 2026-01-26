@@ -500,10 +500,10 @@
             <div class="task-item">
               <input
                 type="checkbox"
-                class="task-select"
-                :value="task.id"
-                @change="toggleTaskSelection(task.id)"
-                :checked="selectedTasks.includes(task.id)"
+                class="task-checkbox"
+                :checked="task.status === 'done'"
+                @change="toggleTaskCompletion(task)"
+                title="Marquer comme terminée"
               />
               <div class="task-main">
                 <span class="task-title" x-text="task.title"></span>

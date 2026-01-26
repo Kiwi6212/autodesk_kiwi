@@ -449,7 +449,7 @@ function app() {
         const isRecurring = this.editingTask.recurrence;
 
         await this.fetchJSON(`${this.API_BASE}/tasks/${this.editingTask.id}`, {
-          method: 'PATCH',
+          method: 'PUT',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify(payload)
         });
@@ -483,6 +483,35 @@ function app() {
         this.showToast('Tâche supprimée', 'success');
       } catch (err) {
         this.showToast('Erreur lors de la suppression', 'error');
+      }
+    },
+
+    async toggleTaskCompletion(task) {
+      try {
+        const newStatus = task.status === 'done' ? 'todo' : 'done';
+        const wasCompleted = newStatus === 'done';
+
+        await this.fetchJSON(`${this.API_BASE}/tasks/${task.id}`, {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ status: newStatus })
+        });
+
+        await this.loadTasks();
+        await this.loadStats();
+
+        if (wasCompleted) {
+          this.onTaskCompleted(task);
+          // If recurring, create next occurrence
+          if (task.recurrence) {
+            await this.createNextRecurrence(task);
+          }
+        } else {
+          this.showToast('Tâche remise en attente', 'info');
+        }
+      } catch (err) {
+        console.error('Error toggling task completion:', err);
+        this.showToast('Erreur lors de la modification', 'error');
       }
     },
 

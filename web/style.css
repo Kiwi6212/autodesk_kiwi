@@ -372,10 +372,22 @@ main {
   align-items: center;
 }
 
-.task-select {
+.task-select,
+.task-checkbox {
   cursor: pointer;
   width: 18px;
   height: 18px;
+  accent-color: var(--accent);
+}
+
+/* Completed tasks styling */
+.task-item:has(.task-checkbox:checked) .task-title {
+  text-decoration: line-through;
+  opacity: 0.6;
+}
+
+.task-item:has(.task-checkbox:checked) .task-meta {
+  opacity: 0.6;
 }
 
 .empty {
