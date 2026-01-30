@@ -358,11 +358,11 @@ These are the recommended improvements to implement first:
 
 ### 🔗 **Integrations & API**
 
-- [ ] **Complete REST API**
+- [x] **Complete REST API** ✅ (Implemented)
   - Full CRUD for all resources
   - Swagger/OpenAPI documentation
   - API authentication (JWT tokens)
-  - Rate limiting
+  - Rate limiting (60/min)
 
 - [ ] **Webhooks**
   - Trigger actions on task completion
@@ -418,10 +418,17 @@ These are the recommended improvements to implement first:
 
 ### 🔐 **Security & Multi-User**
 
-- [ ] **User Authentication**
+- [x] **User Authentication** ✅ (Implemented)
   - JWT-based login system
-  - Secure password hashing
-  - Session management
+  - Secure password hashing (bcrypt)
+  - Session management with token expiration
+
+- [x] **Security Hardening** ✅ (Implemented)
+  - Rate limiting (60 requests/minute)
+  - SSRF protection for external URLs
+  - XSS protection with DOMPurify
+  - Security HTTP headers
+  - URL validation for user inputs
 
 - [ ] **Multi-User Support**
   - User accounts and profiles
@@ -494,6 +501,10 @@ Once the backend is running, access interactive API documentation:
 
 | Endpoint | Method | Description |
 |----------|--------|-------------|
+| `/auth/register` | POST | Create a new user account |
+| `/auth/login` | POST | Authenticate and get JWT token |
+| `/auth/me` | GET | Get current user info |
+| `/auth/logout` | POST | Logout (client-side token discard) |
 | `/tasks` | GET | List all tasks with filters |
 | `/tasks` | POST | Create a new task |
 | `/tasks/{id}` | PUT | Update a task |
@@ -507,12 +518,32 @@ Once the backend is running, access interactive API documentation:
 
 ## 🔒 Security
 
+AutoDesk Kiwi implements multiple layers of security:
+
+### Authentication
+- **JWT Authentication**: Secure token-based authentication system
+- **Password Hashing**: bcrypt with automatic salting
+- **Token Expiration**: Configurable session duration (default: 24 hours)
+
+### API Protection
+- **Rate Limiting**: 60 requests/minute per IP (configurable)
+- **SSRF Protection**: URL whitelist for external calendar requests
+- **Security Headers**: X-Content-Type-Options, X-Frame-Options, X-XSS-Protection
+- **CORS**: Restricted origins for cross-origin requests
+
+### Frontend Security
+- **XSS Protection**: DOMPurify sanitization for HTML content
+- **URL Validation**: Only http/https protocols allowed for user links
+- **Content Security**: Sandboxed iframes for email display
+
+### Configuration
 - **Environment Variables**: Sensitive data stored in `.env` (not committed)
-- **CORS**: Restricted to localhost during development
 - **Input Validation**: Pydantic models validate all inputs
 - **Error Handling**: Generic error messages to avoid information leakage
 
-**Important**: Never commit your `.env` file or expose API tokens publicly.
+**Important**:
+- Never commit your `.env` file or expose API tokens publicly
+- Generate a unique `JWT_SECRET_KEY` for production use
 
 ---
 

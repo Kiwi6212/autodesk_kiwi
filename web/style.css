@@ -2456,3 +2456,95 @@ footer {
   border-color: rgba(74, 163, 255, 0.4);
   color: #4aa3ff;
 }
+
+/* ============ AUTHENTICATION ============ */
+
+.auth-nav {
+  display: flex;
+  align-items: center;
+  margin-left: auto;
+  padding-left: 16px;
+}
+
+.user-menu {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.user-badge {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 12px;
+  background: var(--panel-hover);
+  border-radius: 20px;
+  font-size: 0.85rem;
+  font-weight: 500;
+  color: var(--text);
+}
+
+.auth-modal {
+  max-width: 400px;
+}
+
+.auth-form {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.auth-form .form-group {
+  margin-bottom: 0;
+}
+
+.auth-form .form-group small {
+  display: block;
+  margin-top: 4px;
+  font-size: 0.75rem;
+  color: var(--muted);
+}
+
+.auth-error {
+  padding: 12px;
+  background: rgba(239, 68, 68, 0.15);
+  border: 1px solid rgba(239, 68, 68, 0.3);
+  border-radius: 8px;
+  color: var(--danger);
+  font-size: 0.9rem;
+}
+
+.auth-switch {
+  text-align: center;
+  margin-top: 16px;
+  margin-bottom: 0;
+  font-size: 0.9rem;
+  color: var(--muted);
+}
+
+.auth-switch a {
+  color: var(--accent);
+  text-decoration: none;
+  font-weight: 500;
+}
+
+.auth-switch a:hover {
+  text-decoration: underline;
+}
+
+@media (max-width: 768px) {
+  .auth-nav {
+    margin-left: 0;
+    padding-left: 0;
+    margin-top: 10px;
+  }
+
+  .topbar {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .tabs {
+    flex-wrap: wrap;
+  }
+}

@@ -1,3 +1,4 @@
+import secrets
 from functools import lru_cache
 
 from pydantic_settings import BaseSettings
@@ -5,8 +6,8 @@ from pydantic_settings import BaseSettings
 
 class Settings(BaseSettings):
     app_name: str = "AutoDesk Kiwi API"
-    app_version: str = "1.0.0"
-    debug: bool = True
+    app_version: str = "1.1.0"
+    debug: bool = False  # SECURITY: Default to False in production
 
     database_url: str = "sqlite:///data.db"
 
@@ -24,10 +25,26 @@ class Settings(BaseSettings):
 
     hyperplanning_url: str = ""
 
+    # JWT Authentication settings
+    jwt_secret_key: str = secrets.token_urlsafe(32)  # Auto-generate if not set
+    jwt_expire_minutes: int = 1440  # 24 hours
+
+    # Rate limiting settings
+    rate_limit_per_minute: int = 60
+
+    # Security: Allowed calendar URL domains (for SSRF protection)
+    allowed_calendar_domains: list[str] = [
+        "hyperplanning.fr",
+        "ensup.eu",
+        "hp-cgy.ensup.eu",
+        "extranet-hp-cgy.ensup.eu"
+    ]
+
     class Config:
         env_file = ".env"
         env_file_encoding = "utf-8"
         extra = "ignore"
+
 
 @lru_cache
 def get_settings():

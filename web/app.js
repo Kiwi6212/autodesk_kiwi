@@ -1,6 +1,20 @@
 function app() {
   return {
-    API_BASE: 'http://127.0.0.1:8000',
+    API_BASE: window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1'
+      ? 'http://127.0.0.1:8000'
+      : `${window.location.origin}/api`,
+
+    // Authentication state
+    auth: {
+      token: localStorage.getItem('auth_token') || null,
+      user: JSON.parse(localStorage.getItem('auth_user') || 'null'),
+      isAuthenticated: false,
+      showLogin: false,
+      showRegister: false,
+      error: '',
+      loginForm: { username: '', password: '' },
+      registerForm: { username: '', email: '', password: '', confirmPassword: '' }
+    },
 
     currentView: localStorage.getItem('lastView') || 'today',
     loading: { tasks: false, weather: false },
@@ -190,6 +204,10 @@ function app() {
       this.initTheme();
       this.startClock();
       this.initGamification();
+
+      // Check authentication status
+      await this.checkAuthOnInit();
+
       await Promise.all([
         this.loadOverview(),
         this.loadTasks(),
@@ -267,10 +285,17 @@ function app() {
 
     async fetchJSON(url, options = {}) {
       try {
-        const res = await fetch(url, {
-          headers: { 'Accept': 'application/json' },
-          ...options
-        });
+        const headers = { 'Accept': 'application/json', ...options.headers };
+        // Add auth token if available
+        if (this.auth.token) {
+          headers['Authorization'] = `Bearer ${this.auth.token}`;
+        }
+        const res = await fetch(url, { ...options, headers });
+        // Handle 401 Unauthorized
+        if (res.status === 401) {
+          this.handleAuthError();
+          throw new Error('Session expirée');
+        }
         if (!res.ok) throw new Error(`HTTP ${res.status}`);
         return await res.json();
       } catch (err) {
@@ -280,11 +305,141 @@ function app() {
     },
 
     async sendJSON(url, data, method = 'POST') {
+      const headers = { 'Content-Type': 'application/json' };
+      if (this.auth.token) {
+        headers['Authorization'] = `Bearer ${this.auth.token}`;
+      }
       return this.fetchJSON(url, {
         method,
-        headers: { 'Content-Type': 'application/json' },
+        headers,
         body: JSON.stringify(data)
       });
+    },
+
+    // ============ AUTHENTICATION ============
+
+    handleAuthError() {
+      this.auth.token = null;
+      this.auth.user = null;
+      this.auth.isAuthenticated = false;
+      localStorage.removeItem('auth_token');
+      localStorage.removeItem('auth_user');
+    },
+
+    async login() {
+      this.auth.error = '';
+      console.log('[Auth] Login attempt:', this.auth.loginForm.username);
+      if (!this.auth.loginForm.username || !this.auth.loginForm.password) {
+        this.auth.error = 'Veuillez remplir tous les champs';
+        return;
+      }
+      try {
+        console.log('[Auth] Sending login request to:', `${this.API_BASE}/auth/login`);
+        const response = await fetch(`${this.API_BASE}/auth/login`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(this.auth.loginForm)
+        });
+        console.log('[Auth] Login response status:', response.status);
+        const data = await response.json();
+        console.log('[Auth] Login response data:', data);
+        if (!response.ok) {
+          this.auth.error = data.detail || 'Identifiants incorrects';
+          console.log('[Auth] Login error:', this.auth.error);
+          return;
+        }
+        this.auth.token = data.access_token;
+        localStorage.setItem('auth_token', data.access_token);
+        // Fetch user info
+        await this.fetchCurrentUser();
+        this.auth.showLogin = false;
+        this.auth.loginForm = { username: '', password: '' };
+        this.showToast('Connexion réussie !', 'success');
+      } catch (err) {
+        console.error('[Auth] Login error:', err);
+        this.auth.error = 'Impossible de contacter le serveur. Vérifiez que l\'API est lancée.';
+      }
+    },
+
+    async register() {
+      this.auth.error = '';
+      console.log('[Auth] Register attempt');
+      const form = this.auth.registerForm;
+      if (!form.username || !form.email || !form.password) {
+        this.auth.error = 'Veuillez remplir tous les champs';
+        return;
+      }
+      if (form.password !== form.confirmPassword) {
+        this.auth.error = 'Les mots de passe ne correspondent pas';
+        return;
+      }
+      if (form.password.length < 8) {
+        this.auth.error = 'Le mot de passe doit contenir au moins 8 caractères';
+        return;
+      }
+      try {
+        console.log('[Auth] Sending register request to:', `${this.API_BASE}/auth/register`);
+        const response = await fetch(`${this.API_BASE}/auth/register`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            username: form.username,
+            email: form.email,
+            password: form.password
+          })
+        });
+        console.log('[Auth] Register response status:', response.status);
+        const data = await response.json();
+        console.log('[Auth] Register response data:', data);
+        if (!response.ok) {
+          this.auth.error = data.detail || 'Erreur lors de l\'inscription';
+          console.log('[Auth] Register error:', this.auth.error);
+          return;
+        }
+        this.auth.showRegister = false;
+        this.auth.showLogin = true;
+        this.auth.registerForm = { username: '', email: '', password: '', confirmPassword: '' };
+        this.showToast('Inscription réussie ! Vous pouvez maintenant vous connecter.', 'success');
+      } catch (err) {
+        console.error('[Auth] Register error:', err);
+        this.auth.error = 'Impossible de contacter le serveur. Vérifiez que l\'API est lancée.';
+      }
+    },
+
+    async fetchCurrentUser() {
+      try {
+        const response = await fetch(`${this.API_BASE}/auth/me`, {
+          headers: { 'Authorization': `Bearer ${this.auth.token}` }
+        });
+        if (response.ok) {
+          this.auth.user = await response.json();
+          this.auth.isAuthenticated = true;
+          localStorage.setItem('auth_user', JSON.stringify(this.auth.user));
+        } else {
+          this.handleAuthError();
+        }
+      } catch (err) {
+        this.handleAuthError();
+      }
+    },
+
+    async logout() {
+      try {
+        await fetch(`${this.API_BASE}/auth/logout`, {
+          method: 'POST',
+          headers: { 'Authorization': `Bearer ${this.auth.token}` }
+        });
+      } catch (err) {
+        // Ignore errors on logout
+      }
+      this.handleAuthError();
+      this.showToast('Déconnexion réussie', 'info');
+    },
+
+    async checkAuthOnInit() {
+      if (this.auth.token) {
+        await this.fetchCurrentUser();
+      }
     },
 
     async loadOverview() {
@@ -959,11 +1114,52 @@ function app() {
       localStorage.setItem('favoriteLinks', JSON.stringify(this.favoriteLinks));
     },
 
+    // ============ SECURITY: URL Validation ============
+
+    isValidUrl(urlString) {
+      try {
+        const url = new URL(urlString);
+        // Only allow http and https protocols (prevent javascript:, data:, etc.)
+        if (!['http:', 'https:'].includes(url.protocol)) {
+          return false;
+        }
+        return true;
+      } catch {
+        return false;
+      }
+    },
+
+    // ============ SECURITY: HTML Sanitization ============
+
+    sanitizeEmailHtml(html) {
+      if (!html) return '';
+      // Use DOMPurify to sanitize HTML and prevent XSS attacks
+      if (typeof DOMPurify !== 'undefined') {
+        return DOMPurify.sanitize(html, {
+          ALLOWED_TAGS: ['p', 'br', 'strong', 'em', 'u', 'a', 'ul', 'ol', 'li', 'div', 'span',
+                         'h1', 'h2', 'h3', 'h4', 'h5', 'h6', 'table', 'tr', 'td', 'th', 'tbody',
+                         'thead', 'img', 'blockquote', 'pre', 'code', 'hr'],
+          ALLOWED_ATTR: ['href', 'src', 'alt', 'title', 'class', 'style', 'target', 'width', 'height'],
+          ALLOW_DATA_ATTR: false,
+          ADD_ATTR: ['target'],
+          FORBID_TAGS: ['script', 'iframe', 'object', 'embed', 'form', 'input', 'button'],
+          FORBID_ATTR: ['onerror', 'onload', 'onclick', 'onmouseover']
+        });
+      }
+      // Fallback: strip all HTML tags if DOMPurify is not available
+      return html.replace(/<[^>]*>/g, '');
+    },
+
     addFavoriteLink() {
       if (!this.newLink.name.trim() || !this.newLink.url.trim()) return;
       let url = this.newLink.url.trim();
       if (!url.startsWith('http://') && !url.startsWith('https://')) {
         url = 'https://' + url;
+      }
+      // Validate URL to prevent XSS via javascript: protocol
+      if (!this.isValidUrl(url)) {
+        this.showToast('URL invalide. Seuls http:// et https:// sont autorisés.', 'error');
+        return;
       }
       this.favoriteLinks.push({
         id: Date.now(),
