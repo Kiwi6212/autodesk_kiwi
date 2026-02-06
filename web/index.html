@@ -20,6 +20,7 @@
   <script src="https://cdn.jsdelivr.net/npm/sortablejs@1.15.0/Sortable.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/dompurify@3.0.6/dist/purify.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/jspdf@2.5.1/dist/jspdf.umd.min.js"></script>
   <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
 </head>
 <body x-data="app()" x-init="init()">
@@ -59,6 +60,9 @@
       </button>
       <button class="tab" :class="{ active: currentView === 'settings' }" @click="currentView = 'settings'">
         ⚙️ Paramètres
+      </button>
+      <button class="tab theme-toggle" @click="showShortcutsHelp = true" title="Raccourcis clavier (?)">
+        ⌨️
       </button>
       <button class="tab theme-toggle" @click="toggleFocusMode()" :class="{ active: focusMode }" title="Mode Focus">
         🎯
@@ -142,9 +146,37 @@
     </div>
   </div>
 
+  <!-- Keyboard Shortcuts Modal -->
+  <div x-show="showShortcutsHelp" class="modal-overlay" @click.self="showShortcutsHelp = false" x-transition>
+    <div class="modal shortcuts-modal">
+      <div class="modal-header">
+        <h3>Raccourcis clavier</h3>
+        <button @click="showShortcutsHelp = false" class="btn" style="padding: 5px 10px;">✕</button>
+      </div>
+      <div class="modal-body shortcuts-body">
+        <div class="shortcuts-section">
+          <h4>Navigation</h4>
+          <div class="shortcut-row"><kbd>Ctrl</kbd> + <kbd>1</kbd><span>Aujourd'hui</span></div>
+          <div class="shortcut-row"><kbd>Ctrl</kbd> + <kbd>2</kbd><span>Taches</span></div>
+          <div class="shortcut-row"><kbd>Ctrl</kbd> + <kbd>3</kbd><span>Meteo</span></div>
+          <div class="shortcut-row"><kbd>Ctrl</kbd> + <kbd>4</kbd><span>Hyperplanning</span></div>
+          <div class="shortcut-row"><kbd>Ctrl</kbd> + <kbd>5</kbd><span>Mail</span></div>
+          <div class="shortcut-row"><kbd>Ctrl</kbd> + <kbd>6</kbd><span>Parametres</span></div>
+        </div>
+        <div class="shortcuts-section">
+          <h4>Actions</h4>
+          <div class="shortcut-row"><kbd>Ctrl</kbd> + <kbd>N</kbd><span>Nouvelle tache</span></div>
+          <div class="shortcut-row"><kbd>T</kbd><span>Changer le theme</span></div>
+          <div class="shortcut-row"><kbd>?</kbd><span>Afficher cette aide</span></div>
+          <div class="shortcut-row"><kbd>Echap</kbd><span>Fermer / Deselectionner</span></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
   <main>
-    
-    
+
+
     <section x-show="currentView === 'today'" x-transition:enter="view-enter" x-transition:leave="view-leave" class="view">
       <h2>📅 Résumé du jour</h2>
 
@@ -1237,6 +1269,36 @@
         </div>
         <p style="color: var(--muted); font-size: 0.85rem; margin-top: 12px;">
           ⚠️ L'import ajoutera les tâches du fichier (les doublons possibles ne seront pas détectés).
+        </p>
+      </div>
+
+      <div class="card">
+        <h3>📄 Export PDF</h3>
+        <p style="color: var(--muted); margin-bottom: 16px;">
+          Exportez vos taches et notes rapides en PDF pour les imprimer ou les partager.
+        </p>
+        <div class="export-import-buttons">
+          <button class="btn btn-primary" @click="exportTasksPDF()">
+            📄 Exporter les taches
+          </button>
+          <button class="btn btn-secondary" @click="exportNotesPDF()">
+            📝 Exporter les notes
+          </button>
+        </div>
+      </div>
+
+      <div class="card">
+        <h3>🔔 Notifications</h3>
+        <p style="color: var(--muted); margin-bottom: 16px;">
+          Activez les notifications du navigateur pour recevoir des alertes Pomodoro.
+        </p>
+        <div class="export-import-buttons">
+          <button class="btn" :class="{ 'btn-primary': notificationsEnabled, 'btn-secondary': !notificationsEnabled }" @click="toggleNotifications()">
+            <span x-text="notificationsEnabled ? '🔔 Notifications activees' : '🔕 Activer les notifications'"></span>
+          </button>
+        </div>
+        <p x-show="notificationsDenied" style="color: var(--danger); font-size: 0.85rem; margin-top: 12px;">
+          ⚠️ Notifications bloquees par le navigateur. Modifiez les permissions dans les parametres du navigateur.
         </p>
       </div>
 

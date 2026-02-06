@@ -139,6 +139,10 @@ function app() {
 
     focusMode: localStorage.getItem('focusMode') === 'true',
 
+    showShortcutsHelp: false,
+    notificationsEnabled: localStorage.getItem('notificationsEnabled') === 'true',
+    notificationsDenied: false,
+
     lofiPlayer: {
       show: false
     },
@@ -276,9 +280,13 @@ function app() {
           this.selectedTasks = [];
           this.email.showCompose = false;
           this.hyperplanning.showImport = false;
+          this.showShortcutsHelp = false;
           break;
         case 't':
           this.toggleTheme();
+          break;
+        case '?':
+          this.showShortcutsHelp = !this.showShortcutsHelp;
           break;
       }
     },
@@ -1430,21 +1438,24 @@ function app() {
 
       if (this.pomodoro.mode === 'work') {
         this.pomodoro.completedPomodoros++;
-        this.onPomodoroCompleted(); // Add XP for completing pomodoro
+        this.onPomodoroCompleted();
 
         if (this.pomodoro.completedPomodoros % 4 === 0) {
           this.pomodoro.mode = 'longBreak';
           this.pomodoro.minutes = this.pomodoro.longBreakDuration;
-          this.showToast('Pomodoro terminé ! Longue pause de 15 min.', 'success');
+          this.showToast('Pomodoro termine ! Longue pause de 15 min.', 'success');
+          this.sendBrowserNotification('Pomodoro termine !', 'Bravo ! Longue pause de 15 minutes.');
         } else {
           this.pomodoro.mode = 'break';
           this.pomodoro.minutes = this.pomodoro.breakDuration;
-          this.showToast('Pomodoro terminé ! Pause de 5 min.', 'success');
+          this.showToast('Pomodoro termine ! Pause de 5 min.', 'success');
+          this.sendBrowserNotification('Pomodoro termine !', 'Bien joue ! Pause de 5 minutes.');
         }
       } else {
         this.pomodoro.mode = 'work';
         this.pomodoro.minutes = this.pomodoro.workDuration;
-        this.showToast('Pause terminée ! Au travail !', 'info');
+        this.showToast('Pause terminee ! Au travail !', 'info');
+        this.sendBrowserNotification('Pause terminee !', 'C\'est reparti ! Au travail !');
       }
       this.pomodoro.seconds = 0;
     },
@@ -2049,6 +2060,189 @@ function app() {
           }
         }
       });
+    },
+
+    // ============ PDF EXPORT ============
+
+    exportTasksPDF() {
+      if (typeof window.jspdf === 'undefined') {
+        this.showToast('jsPDF non disponible. Verifiez votre connexion.', 'error');
+        return;
+      }
+
+      const { jsPDF } = window.jspdf;
+      const doc = new jsPDF();
+      const pageWidth = doc.internal.pageSize.getWidth();
+
+      // Title
+      doc.setFontSize(20);
+      doc.setFont('helvetica', 'bold');
+      doc.text('AutoDesk Kiwi - Taches', pageWidth / 2, 20, { align: 'center' });
+
+      doc.setFontSize(10);
+      doc.setFont('helvetica', 'normal');
+      doc.text(`Exporte le ${new Date().toLocaleDateString('fr-FR')}`, pageWidth / 2, 28, { align: 'center' });
+
+      let y = 40;
+      const statusOrder = ['todo', 'doing', 'done', 'archived'];
+      const statusLabels = { todo: 'A faire', doing: 'En cours', done: 'Terminees', archived: 'Archivees' };
+
+      for (const status of statusOrder) {
+        const statusTasks = this.tasks.filter(t => t.status === status);
+        if (statusTasks.length === 0) continue;
+
+        if (y > 270) { doc.addPage(); y = 20; }
+
+        doc.setFontSize(14);
+        doc.setFont('helvetica', 'bold');
+        doc.text(`${statusLabels[status]} (${statusTasks.length})`, 15, y);
+        y += 8;
+
+        doc.setFontSize(10);
+        doc.setFont('helvetica', 'normal');
+
+        for (const task of statusTasks) {
+          if (y > 275) { doc.addPage(); y = 20; }
+
+          const checkbox = task.status === 'done' ? '[x]' : '[ ]';
+          const priority = task.priority === 'high' ? ' [!]' : task.priority === 'low' ? ' [~]' : '';
+          const line = `${checkbox} ${task.title}${priority}`;
+          doc.text(line, 20, y);
+          y += 6;
+
+          if (task.due_date) {
+            doc.setTextColor(120, 120, 120);
+            doc.text(`   Echeance: ${new Date(task.due_date).toLocaleDateString('fr-FR')}`, 20, y);
+            doc.setTextColor(0, 0, 0);
+            y += 5;
+          }
+
+          if (task.tags) {
+            doc.setTextColor(120, 120, 120);
+            doc.text(`   Tags: ${task.tags}`, 20, y);
+            doc.setTextColor(0, 0, 0);
+            y += 5;
+          }
+
+          y += 2;
+        }
+        y += 5;
+      }
+
+      doc.save(`kiwi-taches-${new Date().toISOString().split('T')[0]}.pdf`);
+      this.showToast('PDF des taches exporte !', 'success');
+    },
+
+    exportNotesPDF() {
+      if (typeof window.jspdf === 'undefined') {
+        this.showToast('jsPDF non disponible. Verifiez votre connexion.', 'error');
+        return;
+      }
+
+      const { jsPDF } = window.jspdf;
+      const doc = new jsPDF();
+      const pageWidth = doc.internal.pageSize.getWidth();
+
+      doc.setFontSize(20);
+      doc.setFont('helvetica', 'bold');
+      doc.text('AutoDesk Kiwi - Notes', pageWidth / 2, 20, { align: 'center' });
+
+      doc.setFontSize(10);
+      doc.setFont('helvetica', 'normal');
+      doc.text(`Exporte le ${new Date().toLocaleDateString('fr-FR')}`, pageWidth / 2, 28, { align: 'center' });
+
+      let y = 40;
+
+      // Quick notes
+      if (this.quickNotes && this.quickNotes.trim()) {
+        doc.setFontSize(14);
+        doc.setFont('helvetica', 'bold');
+        doc.text('Notes rapides', 15, y);
+        y += 10;
+
+        doc.setFontSize(10);
+        doc.setFont('helvetica', 'normal');
+
+        const lines = doc.splitTextToSize(this.quickNotes, pageWidth - 30);
+        for (const line of lines) {
+          if (y > 280) { doc.addPage(); y = 20; }
+          doc.text(line, 15, y);
+          y += 5;
+        }
+        y += 10;
+      }
+
+      // Grades
+      if (this.hyperplanning.grades && this.hyperplanning.grades.length > 0) {
+        if (y > 250) { doc.addPage(); y = 20; }
+        doc.setFontSize(14);
+        doc.setFont('helvetica', 'bold');
+        doc.text('Notes scolaires', 15, y);
+        y += 10;
+
+        doc.setFontSize(10);
+        doc.setFont('helvetica', 'normal');
+
+        for (const grade of this.hyperplanning.grades) {
+          if (y > 280) { doc.addPage(); y = 20; }
+          doc.text(`${grade.subject} - ${grade.date}: ${grade.value}/20`, 20, y);
+          y += 6;
+        }
+      }
+
+      if (!this.quickNotes?.trim() && (!this.hyperplanning.grades || this.hyperplanning.grades.length === 0)) {
+        doc.setFontSize(12);
+        doc.text('Aucune note a exporter.', 15, y);
+      }
+
+      doc.save(`kiwi-notes-${new Date().toISOString().split('T')[0]}.pdf`);
+      this.showToast('PDF des notes exporte !', 'success');
+    },
+
+    // ============ BROWSER NOTIFICATIONS ============
+
+    async toggleNotifications() {
+      if (this.notificationsEnabled) {
+        this.notificationsEnabled = false;
+        localStorage.setItem('notificationsEnabled', 'false');
+        this.showToast('Notifications desactivees', 'info');
+        return;
+      }
+
+      if (!('Notification' in window)) {
+        this.showToast('Votre navigateur ne supporte pas les notifications', 'error');
+        return;
+      }
+
+      const permission = await Notification.requestPermission();
+      if (permission === 'granted') {
+        this.notificationsEnabled = true;
+        this.notificationsDenied = false;
+        localStorage.setItem('notificationsEnabled', 'true');
+        this.showToast('Notifications activees !', 'success');
+        new Notification('AutoDesk Kiwi', {
+          body: 'Les notifications sont activees !',
+          icon: 'favicon.png'
+        });
+      } else if (permission === 'denied') {
+        this.notificationsDenied = true;
+        this.showToast('Notifications bloquees par le navigateur', 'error');
+      }
+    },
+
+    sendBrowserNotification(title, body) {
+      if (!this.notificationsEnabled) return;
+      if (!('Notification' in window) || Notification.permission !== 'granted') return;
+
+      try {
+        new Notification(title, {
+          body,
+          icon: 'favicon.png',
+          tag: 'pomodoro'
+        });
+      } catch (e) {
+        // Fallback: some browsers don't support the Notification constructor directly
+      }
     },
 
     formatAvgTime(hours) {
