@@ -8,9 +8,12 @@ from dotenv import load_dotenv
 from fastapi import APIRouter
 from pydantic import BaseModel
 
+from logger import setup_logger
+
 load_dotenv()
 
 router = APIRouter(prefix="/email", tags=["Email"])
+logger = setup_logger("email")
 
 
 class EmailItem(BaseModel):
@@ -140,7 +143,7 @@ def get_proton_unread():
                             date=msg.get("Date", "")
                         ))
             except Exception as e:
-                print(f"Error reading email {e_id}: {e}")
+                logger.error(f"Error reading email {e_id}: {e}")
                 continue
 
         mail.close()
@@ -149,8 +152,8 @@ def get_proton_unread():
         return EmailSummary(count_unread=count, emails=email_list)
 
     except Exception as e:
-        print(f"Unknown error: {e}")
-        return EmailSummary(count_unread=0, error=f"Error: {str(e)}")
+        logger.error(f"Unread fetch error: {e}")
+        return EmailSummary(count_unread=0, error="Erreur lors de la récupération des emails")
 
 
 @router.get("/proton/message/{email_id}", response_model=EmailDetail)
@@ -186,8 +189,8 @@ def get_email_detail(email_id: str):
         return EmailDetail(id=email_id, subject="", sender="", date="", body="", error="Email not found")
 
     except Exception as e:
-        print(f"Error fetching email {email_id}: {e}")
-        return EmailDetail(id=email_id, subject="", sender="", date="", body="", error=str(e))
+        logger.error(f"Error fetching email {email_id}: {e}")
+        return EmailDetail(id=email_id, subject="", sender="", date="", body="", error="Erreur lors du chargement de l'email")
 
 
 class EmailHistoryResponse(BaseModel):
@@ -233,7 +236,7 @@ def get_proton_history(page: int = 1, per_page: int = 20):
                             date=msg.get("Date", "")
                         ))
             except Exception as e:
-                print(f"Error reading email {e_id}: {e}")
+                logger.error(f"Error reading email {e_id}: {e}")
                 continue
 
         mail.close()
@@ -248,8 +251,8 @@ def get_proton_history(page: int = 1, per_page: int = 20):
         )
 
     except Exception as e:
-        print(f"History error: {e}")
-        return EmailHistoryResponse(total_count=0, error=f"Error: {str(e)}")
+        logger.error(f"History error: {e}")
+        return EmailHistoryResponse(total_count=0, error="Erreur lors du chargement de l'historique")
 
 
 class SendEmailRequest(BaseModel):
@@ -289,8 +292,8 @@ def send_proton_email(email_data: SendEmailRequest):
         return {"success": True, "message": "Email sent successfully"}
 
     except Exception as e:
-        print(f"Email send error: {e}")
-        return {"success": False, "error": str(e)}
+        logger.error(f"Email send error: {e}")
+        return {"success": False, "error": "Erreur lors de l'envoi de l'email"}
 
 
 @router.get("/summary")

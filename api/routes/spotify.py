@@ -8,9 +8,12 @@ from fastapi import APIRouter, HTTPException, Query
 from fastapi.responses import RedirectResponse
 from pydantic import BaseModel
 
+from logger import setup_logger
+
 load_dotenv()
 
 router = APIRouter(prefix="/spotify", tags=["Spotify"])
+logger = setup_logger("spotify")
 
 SPOTIFY_CLIENT_ID = os.getenv("SPOTIFY_CLIENT_ID")
 SPOTIFY_CLIENT_SECRET = os.getenv("SPOTIFY_CLIENT_SECRET")
@@ -80,7 +83,7 @@ def _refresh_access_token():
             return True
         return False
     except Exception as e:
-        print(f"Token refresh error: {e}")
+        logger.error(f"Token refresh error: {e}")
         return False
 
 
@@ -174,7 +177,7 @@ def spotify_callback(code: str = Query(None), error: str = Query(None)):
             return RedirectResponse(url="/?spotify_error=token_exchange_failed")
 
     except Exception as e:
-        print(f"Spotify callback error: {e}")
+        logger.error(f"Spotify callback error: {e}")
         return RedirectResponse(url="/?spotify_error=exception")
 
 

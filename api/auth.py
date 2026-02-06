@@ -7,10 +7,12 @@ from datetime import datetime, timedelta, timezone
 from typing import Annotated
 
 import bcrypt
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, Depends, HTTPException, Request, status
 from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 from jose import JWTError, jwt
 from pydantic import BaseModel, EmailStr, Field
+from slowapi import Limiter
+from slowapi.util import get_remote_address
 from sqlmodel import Field as SQLField
 from sqlmodel import Session, SQLModel, select
 
@@ -191,10 +193,12 @@ def require_auth(
 # ============ Router ============
 
 router = APIRouter(prefix="/auth", tags=["authentication"])
+auth_limiter = Limiter(key_func=get_remote_address)
 
 
 @router.post("/register", response_model=UserOut, status_code=status.HTTP_201_CREATED)
-def register(user_data: UserCreate):
+@auth_limiter.limit("5/minute")
+def register(request: Request, user_data: UserCreate):
     """Register a new user."""
     with get_session() as session:
         # Check if username exists
@@ -233,7 +237,8 @@ def register(user_data: UserCreate):
 
 
 @router.post("/login", response_model=Token)
-def login(credentials: UserLogin):
+@auth_limiter.limit("10/minute")
+def login(request: Request, credentials: UserLogin):
     """Authenticate user and return JWT token."""
     with get_session() as session:
         user = session.exec(

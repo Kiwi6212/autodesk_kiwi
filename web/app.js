@@ -328,42 +328,34 @@ function app() {
 
     async login() {
       this.auth.error = '';
-      console.log('[Auth] Login attempt:', this.auth.loginForm.username);
       if (!this.auth.loginForm.username || !this.auth.loginForm.password) {
         this.auth.error = 'Veuillez remplir tous les champs';
         return;
       }
       try {
-        console.log('[Auth] Sending login request to:', `${this.API_BASE}/auth/login`);
         const response = await fetch(`${this.API_BASE}/auth/login`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify(this.auth.loginForm)
         });
-        console.log('[Auth] Login response status:', response.status);
         const data = await response.json();
-        console.log('[Auth] Login response data:', data);
         if (!response.ok) {
           this.auth.error = data.detail || 'Identifiants incorrects';
-          console.log('[Auth] Login error:', this.auth.error);
           return;
         }
         this.auth.token = data.access_token;
         localStorage.setItem('auth_token', data.access_token);
-        // Fetch user info
         await this.fetchCurrentUser();
         this.auth.showLogin = false;
         this.auth.loginForm = { username: '', password: '' };
         this.showToast('Connexion réussie !', 'success');
       } catch (err) {
-        console.error('[Auth] Login error:', err);
         this.auth.error = 'Impossible de contacter le serveur. Vérifiez que l\'API est lancée.';
       }
     },
 
     async register() {
       this.auth.error = '';
-      console.log('[Auth] Register attempt');
       const form = this.auth.registerForm;
       if (!form.username || !form.email || !form.password) {
         this.auth.error = 'Veuillez remplir tous les champs';
@@ -378,7 +370,6 @@ function app() {
         return;
       }
       try {
-        console.log('[Auth] Sending register request to:', `${this.API_BASE}/auth/register`);
         const response = await fetch(`${this.API_BASE}/auth/register`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
@@ -388,12 +379,9 @@ function app() {
             password: form.password
           })
         });
-        console.log('[Auth] Register response status:', response.status);
         const data = await response.json();
-        console.log('[Auth] Register response data:', data);
         if (!response.ok) {
           this.auth.error = data.detail || 'Erreur lors de l\'inscription';
-          console.log('[Auth] Register error:', this.auth.error);
           return;
         }
         this.auth.showRegister = false;
@@ -401,7 +389,6 @@ function app() {
         this.auth.registerForm = { username: '', email: '', password: '', confirmPassword: '' };
         this.showToast('Inscription réussie ! Vous pouvez maintenant vous connecter.', 'success');
       } catch (err) {
-        console.error('[Auth] Register error:', err);
         this.auth.error = 'Impossible de contacter le serveur. Vérifiez que l\'API est lancée.';
       }
     },
@@ -632,7 +619,10 @@ function app() {
       if (!confirm('Supprimer cette tâche ?')) return;
 
       try {
-        await fetch(`${this.API_BASE}/tasks/${id}`, { method: 'DELETE' });
+        const headers = {};
+        if (this.auth.token) headers['Authorization'] = `Bearer ${this.auth.token}`;
+        const res = await fetch(`${this.API_BASE}/tasks/${id}`, { method: 'DELETE', headers });
+        if (!res.ok) throw new Error(`HTTP ${res.status}`);
         await this.loadTasks();
         await this.loadStats();
         this.showToast('Tâche supprimée', 'success');
@@ -909,7 +899,10 @@ function app() {
       if (!confirm('Voulez-vous vraiment supprimer toutes les notes ?')) return;
 
       try {
-        const result = await fetch(`${this.API_BASE}/hyperplanning/grades/clear`, { method: 'DELETE' });
+        const headers = {};
+        if (this.auth.token) headers['Authorization'] = `Bearer ${this.auth.token}`;
+        const result = await fetch(`${this.API_BASE}/hyperplanning/grades/clear`, { method: 'DELETE', headers });
+        if (!result.ok) throw new Error(`HTTP ${result.status}`);
         const data = await result.json();
         this.showToast(data.message, 'success');
         await this.loadHyperplanning();
@@ -1290,8 +1283,8 @@ function app() {
       const isRecurring = this.draggingTask.recurrence;
 
       try {
-        await fetch(`${this.API_BASE}/tasks/${this.draggingTask.id}`, {
-          method: 'PATCH',
+        await this.fetchJSON(`${this.API_BASE}/tasks/${this.draggingTask.id}`, {
+          method: 'PUT',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ status: newStatus })
         });
@@ -1358,15 +1351,11 @@ function app() {
         if (data.tasks && data.tasks.length > 0) {
           for (const task of data.tasks) {
             try {
-              await fetch(`${this.API_BASE}/tasks`, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({
-                  title: task.title,
-                  description: task.description,
-                  priority: task.priority,
-                  due_date: task.due_date
-                })
+              await this.sendJSON(`${this.API_BASE}/tasks`, {
+                title: task.title,
+                description: task.description,
+                priority: task.priority,
+                due_date: task.due_date
               });
             } catch (e) {
               console.warn('Could not import task:', task.title);
@@ -1548,17 +1537,15 @@ function app() {
     },
 
     isCurrentCourse(course) {
+      if (!course?.start || !course?.end || !course.start.includes(':') || !course.end.includes(':')) return false;
+
       const now = new Date();
-      const currentHour = now.getHours();
-      const currentMinute = now.getMinutes();
-      const currentTime = currentHour * 60 + currentMinute;
+      const currentTime = now.getHours() * 60 + now.getMinutes();
 
       const [startH, startM] = course.start.split(':').map(Number);
       const [endH, endM] = course.end.split(':').map(Number);
-      const startTime = startH * 60 + startM;
-      const endTime = endH * 60 + endM;
 
-      return currentTime >= startTime && currentTime < endTime;
+      return currentTime >= (startH * 60 + startM) && currentTime < (endH * 60 + endM);
     },
 
     getGradeColor(value) {
@@ -1597,9 +1584,15 @@ function app() {
         case 'weekly':
           nextDate.setDate(nextDate.getDate() + 7);
           break;
-        case 'monthly':
+        case 'monthly': {
+          const currentDay = nextDate.getDate();
           nextDate.setMonth(nextDate.getMonth() + 1);
+          // Fix day overflow (e.g. Jan 31 -> Feb 28, not Mar 3)
+          if (nextDate.getDate() !== currentDay) {
+            nextDate.setDate(0); // Go to last day of previous month
+          }
           break;
+        }
       }
       return nextDate.toISOString();
     },

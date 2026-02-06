@@ -1,13 +1,30 @@
+import os
 import secrets
 from functools import lru_cache
+from pathlib import Path
 
 from pydantic_settings import BaseSettings
+
+
+def _get_or_create_jwt_secret() -> str:
+    """Get JWT secret from env or generate and persist one."""
+    env_secret = os.getenv("JWT_SECRET_KEY")
+    if env_secret and env_secret != "CHANGEZ-MOI-EN-PRODUCTION-avec-une-cle-secrete-unique":
+        return env_secret
+
+    secret_file = Path(__file__).parent / ".jwt_secret"
+    if secret_file.exists():
+        return secret_file.read_text().strip()
+
+    new_secret = secrets.token_urlsafe(32)
+    secret_file.write_text(new_secret)
+    return new_secret
 
 
 class Settings(BaseSettings):
     app_name: str = "AutoDesk Kiwi API"
     app_version: str = "1.1.0"
-    debug: bool = False  # SECURITY: Default to False in production
+    debug: bool = False
 
     database_url: str = "sqlite:///data.db"
 
@@ -26,7 +43,7 @@ class Settings(BaseSettings):
     hyperplanning_url: str = ""
 
     # JWT Authentication settings
-    jwt_secret_key: str = secrets.token_urlsafe(32)  # Auto-generate if not set
+    jwt_secret_key: str = _get_or_create_jwt_secret()
     jwt_expire_minutes: int = 1440  # 24 hours
 
     # Rate limiting settings

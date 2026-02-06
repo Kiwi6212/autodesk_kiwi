@@ -38,13 +38,15 @@ env.bak/
 venv.bak/
 
 # ===========================
-# Environment Variables
+# Environment Variables & Secrets
 # ===========================
 .env
 .env.local
 .env.*.local
 *.env
 !.env.example
+.jwt_secret
+api/.jwt_secret
 
 # ===========================
 # Database

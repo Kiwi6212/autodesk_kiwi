@@ -291,7 +291,7 @@ def get_grades():
             return grades
     except Exception as e:
         logger.error(f"Error fetching grades: {e}")
-        raise HTTPException(status_code=500, detail=str(e)) from None
+        raise HTTPException(status_code=500, detail="Erreur lors du chargement des notes") from None
 
 
 @router.post("/grades/import")
@@ -319,13 +319,13 @@ def import_grades(payload: GradeImportPayload):
                 session.refresh(grade)
 
             return {
-                "message": f"{len(new_grades)} grade(s) imported successfully",
+                "message": f"{len(new_grades)} note(s) importée(s)",
                 "count": len(new_grades)
             }
 
     except Exception as e:
         logger.error(f"Error importing grades: {e}")
-        raise HTTPException(status_code=500, detail=str(e)) from None
+        raise HTTPException(status_code=500, detail="Erreur lors de l'import des notes") from None
 
 
 @router.delete("/grades/clear")
@@ -342,10 +342,10 @@ def clear_grades():
             session.commit()
 
             return {
-                "message": f"{count} grade(s) deleted",
+                "message": f"{count} note(s) supprimée(s)",
                 "count": count
             }
 
     except Exception as e:
         logger.error(f"Error clearing grades: {e}")
-        raise HTTPException(status_code=500, detail=str(e)) from None
+        raise HTTPException(status_code=500, detail="Erreur lors de la suppression des notes") from None
