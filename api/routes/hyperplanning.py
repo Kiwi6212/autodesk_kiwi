@@ -19,27 +19,20 @@ router = APIRouter(prefix="/hyperplanning", tags=["hyperplanning"])
 
 
 def validate_calendar_url(url: str) -> bool:
-    """
-    Validate calendar URL to prevent SSRF attacks.
-    Only allows URLs from whitelisted domains.
-    """
     if not url:
         return False
 
     try:
         parsed = urlparse(url)
 
-        # Must be https
         if parsed.scheme not in ("http", "https"):
             logger.warning(f"Invalid URL scheme: {parsed.scheme}")
             return False
 
-        # Check if domain is in allowed list
         hostname = parsed.hostname
         if not hostname:
             return False
 
-        # Check if the hostname matches or is a subdomain of allowed domains
         for allowed_domain in settings.allowed_calendar_domains:
             if hostname == allowed_domain or hostname.endswith(f".{allowed_domain}"):
                 return True
@@ -113,7 +106,6 @@ def get_courses():
             "courses": []
         }
 
-    # SECURITY: Validate URL before making request (SSRF protection)
     if not validate_calendar_url(settings.hyperplanning_url):
         logger.error(f"Invalid or unauthorized calendar URL: {settings.hyperplanning_url}")
         raise HTTPException(
@@ -179,7 +171,6 @@ def get_next_courses():
     if not settings.hyperplanning_url:
         return []
 
-    # SECURITY: Validate URL before making request (SSRF protection)
     if not validate_calendar_url(settings.hyperplanning_url):
         raise HTTPException(status_code=400, detail="Calendar URL is not authorized")
 
@@ -225,7 +216,6 @@ def get_stats():
     if not settings.hyperplanning_url:
         return []
 
-    # SECURITY: Validate URL before making request (SSRF protection)
     if not validate_calendar_url(settings.hyperplanning_url):
         raise HTTPException(status_code=400, detail="Calendar URL is not authorized")
 

@@ -1,142 +1,72 @@
-# 📝 Guide d'Import des Notes
+# Grades Import Guide
 
-## Vue d'ensemble
+## Overview
 
-AutoDesk Kiwi permet maintenant d'importer vos notes manuellement pour les afficher dans la section Hyperplanning.
+AutoDesk Kiwi supports manual grade import for the Hyperplanning section.
 
-## Comment ça marche ?
+## Format
 
-### 1️⃣ Préparer vos notes
+Grades must be provided as a JSON array. Each entry contains:
 
-Vos notes doivent être au format JSON (un tableau d'objets). Chaque note contient :
-- `subject` : Le nom de la matière
-- `date` : La date de la note (format libre, ex: "13 déc.")
-- `value` : La valeur de la note (sur 20)
+| Field | Type | Description |
+|-------|------|-------------|
+| `subject` | string | Subject name (max 200 chars) |
+| `date` | string | Grade date (max 50 chars) |
+| `value` | number | Grade value (0-20) |
 
-**Exemple :**
+**Example:**
+
 ```json
 [
-  {"subject": "Admin & séc infra réseau", "date": "18 déc.", "value": 18.39},
-  {"subject": "Anglais", "date": "13 déc.", "value": 15.50},
-  {"subject": "Supervision des infras", "date": "12 déc.", "value": 10.00}
+  {"subject": "Admin & sec infra reseau", "date": "18 dec.", "value": 18.39},
+  {"subject": "Anglais", "date": "13 dec.", "value": 15.50},
+  {"subject": "Supervision des infras", "date": "12 dec.", "value": 10.00}
 ]
 ```
 
-### 2️⃣ Importer vos notes
+## Import Steps
 
-1. **Ouvrez AutoDesk Kiwi** dans votre navigateur
-2. **Allez dans l'onglet "🎓 Hyperplanning"**
-3. Dans la section "📝 Dernières notes", **cliquez sur "➕ Importer"**
-4. **Collez votre JSON** dans la zone de texte
-5. **Cliquez sur "✅ Importer"**
+1. Open the Hyperplanning tab
+2. In the grades section, click "Import"
+3. Paste the JSON content
+4. Confirm the import
 
-### 3️⃣ Résultat
-
-- Vos notes apparaissent immédiatement
-- Les notes sont **sauvegardées en base de données** SQLite
-- Elles persistent même après redémarrage
-
-## Fichier d'exemple
-
-Un fichier d'exemple est disponible : [`docs/example_grades.json`](example_grades.json)
-
-Vous pouvez copier-coller son contenu directement dans l'interface d'import.
-
-## Supprimer toutes les notes
-
-Si vous voulez réimporter vos notes (par exemple, nouvelles notes disponibles) :
-
-1. Cliquez sur **"🗑️ Tout supprimer"**
-2. Confirmez la suppression
-3. Importez vos nouvelles notes
+Grades are saved to the SQLite database and persist across restarts.
 
 ## API Endpoints
 
-Pour les développeurs, voici les endpoints disponibles :
-
 ### GET `/hyperplanning/grades`
-Récupère toutes les notes (triées par date de création décroissante).
 
-**Réponse :**
-```json
-[
-  {
-    "id": 1,
-    "subject": "Anglais",
-    "date": "13 déc.",
-    "value": 15.5,
-    "created_at": "2026-01-23T10:30:00Z"
-  }
-]
-```
+Returns all grades sorted by creation date (descending).
 
 ### POST `/hyperplanning/grades/import`
-Importe des notes (remplace toutes les notes existantes).
 
-**Body :**
+Replaces all existing grades with the provided data.
+
+**Request body:**
+
 ```json
 {
   "grades": [
-    {"subject": "Matière", "date": "13 déc.", "value": 15.5}
+    {"subject": "Subject", "date": "13 dec.", "value": 15.5}
   ]
 }
 ```
 
-**Réponse :**
-```json
-{
-  "message": "5 note(s) importée(s) avec succès",
-  "count": 5,
-  "grades": [...]
-}
-```
-
 ### DELETE `/hyperplanning/grades/clear`
-Supprime toutes les notes.
 
-**Réponse :**
-```json
-{
-  "message": "10 note(s) supprimée(s)",
-  "count": 10
-}
-```
-
-## Conseils
-
-### 📋 Comment récupérer vos notes depuis Hyperplanning ?
-
-Puisque l'API Hyperplanning est chiffrée, voici comment procéder manuellement :
-
-1. **Copiez vos notes** depuis l'interface web Hyperplanning
-2. **Formatez-les en JSON** (vous pouvez utiliser un outil comme Excel/Google Sheets)
-3. **Importez-les** dans AutoDesk Kiwi
-
-### 🔄 Fréquence d'import
-
-- **1 fois par semaine** : pour avoir les notes à jour
-- **Après chaque évaluation** : pour être toujours synchronisé
+Deletes all grades.
 
 ## Validation
 
-Les notes sont validées avant l'import :
-- `subject` : obligatoire, max 200 caractères
-- `date` : obligatoire, max 50 caractères
-- `value` : obligatoire, doit être entre 0 et 20
+- `subject`: required, max 200 characters
+- `date`: required, max 50 characters
+- `value`: required, must be between 0 and 20
 
-Si une note ne passe pas la validation, l'import échouera avec un message d'erreur.
+## Troubleshooting
 
-## Problèmes courants
-
-### ❌ "Format JSON invalide"
-→ Vérifiez la syntaxe de votre JSON (virgules, guillemets, crochets)
-
-### ❌ "Le JSON doit être un tableau"
-→ Votre JSON doit commencer par `[` et finir par `]`
-
-### ❌ "value must be between 0 and 20"
-→ Les notes doivent être sur 20 (utilisez des décimales si nécessaire, ex: 15.5)
-
-## Support
-
-Pour toute question, ouvrez une issue sur le projet GitHub.
+| Error | Cause |
+|-------|-------|
+| Invalid JSON format | Check syntax (commas, quotes, brackets) |
+| JSON must be an array | Content must start with `[` and end with `]` |
+| Value must be between 0 and 20 | Use decimal notation if needed (e.g., 15.5) |

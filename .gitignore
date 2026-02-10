@@ -1,6 +1,4 @@
-# ===========================
 # Python
-# ===========================
 __pycache__/
 *.py[cod]
 *$py.class
@@ -26,9 +24,7 @@ MANIFEST
 pip-log.txt
 pip-delete-this-directory.txt
 
-# ===========================
-# Virtual Environments
-# ===========================
+# Virtual environments
 env/
 venv/
 .venv/
@@ -37,9 +33,7 @@ ENV/
 env.bak/
 venv.bak/
 
-# ===========================
-# Environment Variables & Secrets
-# ===========================
+# Environment and secrets
 .env
 .env.local
 .env.*.local
@@ -48,30 +42,21 @@ venv.bak/
 .jwt_secret
 api/.jwt_secret
 
-# ===========================
 # Database
-# ===========================
 *.db
 *.sqlite
 *.sqlite3
-data.db
-api/data.db
 
-# ===========================
-# IDE / Editors
-# ===========================
+# IDE
 .vscode/
 .idea/
 *.swp
 *.swo
 *~
-.DS_Store
 *.sublime-project
 *.sublime-workspace
 
-# ===========================
-# OS Generated
-# ===========================
+# OS
 .DS_Store
 .DS_Store?
 ._*
@@ -81,25 +66,19 @@ ehthumbs.db
 Thumbs.db
 desktop.ini
 
-# ===========================
 # Logs
-# ===========================
 *.log
 logs/
 *.log.*
 
-# ===========================
-# Temporary Files
-# ===========================
+# Temporary
 tmp/
 temp/
 *.tmp
 *.bak
 *.cache
 
-# ===========================
 # Testing
-# ===========================
 .pytest_cache/
 .coverage
 htmlcov/
@@ -110,26 +89,22 @@ coverage.xml
 *.py,cover
 .hypothesis/
 
-# ===========================
-# Project Specific
-# ===========================
-# Fichiers de debug/test
+# Debug scripts
 inspect_ical.py
 inspect_ical_full.py
 repro_geocode.py
+api/repro_geocode.py
 ical_output.txt
+test_proton_bridge.py
+notes_import.json
+CHANGELOG_GITHUB_PREP.md
 
-# Compiled executables
+# Compiled
 *.exe
 *.app
 *.dmg
 
-# ===========================
-# Claude Code / Local
-# ===========================
+# Local
 .claude/
 cmd
 nul
-test_proton_bridge.py
-notes_import.json
-CHANGELOG_GITHUB_PREP.md

@@ -4,7 +4,6 @@ function app() {
       ? 'http://127.0.0.1:8000'
       : `${window.location.origin}/api`,
 
-    // Authentication state
     auth: {
       token: localStorage.getItem('auth_token') || null,
       user: JSON.parse(localStorage.getItem('auth_user') || 'null'),
@@ -92,10 +91,8 @@ function app() {
     systemTheme: window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light',
     accentColor: localStorage.getItem('accentColor') || 'blue',
 
-    // Available accent colors
     accentColors: ['blue', 'purple', 'green', 'orange', 'pink', 'cyan', 'red', 'yellow'],
 
-    // Widget order for draggable widgets
     widgetOrder: JSON.parse(localStorage.getItem('widgetOrder') || '["clock", "pomodoro", "quote", "notes", "links", "countdowns", "stats", "gamification", "habits", "spotify", "lofi"]'),
     collapsedWidgets: JSON.parse(localStorage.getItem('collapsedWidgets') || '[]'),
 
@@ -147,7 +144,6 @@ function app() {
       show: false
     },
 
-    // Analytics data
     analytics: {
       daily: [],
       weekly: [],
@@ -158,7 +154,6 @@ function app() {
     },
     analyticsCharts: {},
 
-    // Gamification system
     gamification: JSON.parse(localStorage.getItem('gamification') || JSON.stringify({
       xp: 0,
       streak: 0,
@@ -191,7 +186,6 @@ function app() {
       { level: 6, name: 'Légende', icon: '👑', minXp: 2000 }
     ],
 
-    // Habit tracker
     habits: JSON.parse(localStorage.getItem('habits') || '[]'),
     habitHistory: JSON.parse(localStorage.getItem('habitHistory') || '{}'),
     showAddHabit: false,
@@ -209,7 +203,6 @@ function app() {
       this.startClock();
       this.initGamification();
 
-      // Check authentication status
       await this.checkAuthOnInit();
 
       await Promise.all([
@@ -294,12 +287,10 @@ function app() {
     async fetchJSON(url, options = {}) {
       try {
         const headers = { 'Accept': 'application/json', ...options.headers };
-        // Add auth token if available
         if (this.auth.token) {
           headers['Authorization'] = `Bearer ${this.auth.token}`;
         }
         const res = await fetch(url, { ...options, headers });
-        // Handle 401 Unauthorized
         if (res.status === 401) {
           this.handleAuthError();
           throw new Error('Session expirée');
@@ -323,8 +314,6 @@ function app() {
         body: JSON.stringify(data)
       });
     },
-
-    // ============ AUTHENTICATION ============
 
     handleAuthError() {
       this.auth.token = null;
@@ -425,7 +414,6 @@ function app() {
           headers: { 'Authorization': `Bearer ${this.auth.token}` }
         });
       } catch (err) {
-        // Ignore errors on logout
       }
       this.handleAuthError();
       this.showToast('Déconnexion réussie', 'info');
@@ -570,7 +558,7 @@ function app() {
         ...task,
         due_date: task.due_date ? task.due_date.slice(0, 16) : '',
         recurrence: task.recurrence || '',
-        _originalStatus: task.status // Store original status for gamification
+        _originalStatus: task.status
       };
     },
 
@@ -593,7 +581,6 @@ function app() {
         if (this.editingTask.due_date) {
           payload.due_date = new Date(this.editingTask.due_date).toISOString();
         }
-        // Check if task was completed (status changed to done)
         const wasCompleted = this.editingTask._originalStatus !== 'done' && this.editingTask.status === 'done';
         const taskForXP = { priority: this.editingTask.priority };
         const isRecurring = this.editingTask.recurrence;
@@ -604,7 +591,6 @@ function app() {
           body: JSON.stringify(payload)
         });
 
-        // If recurring task was completed, create next occurrence
         if (wasCompleted && isRecurring) {
           await this.createNextRecurrence(this.editingTask);
         }
@@ -655,7 +641,6 @@ function app() {
 
         if (wasCompleted) {
           this.onTaskCompleted(task);
-          // If recurring, create next occurrence
           if (task.recurrence) {
             await this.createNextRecurrence(task);
           }
@@ -1029,7 +1014,6 @@ function app() {
     },
 
     initTheme() {
-      // Listen for system theme changes
       window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', (e) => {
         this.systemTheme = e.matches ? 'dark' : 'light';
         if (this.theme === 'auto') {
@@ -1056,7 +1040,6 @@ function app() {
       this.showToast(`Couleur d'accent: ${color}`, 'info');
     },
 
-    // Widget management
     saveWidgetOrder() {
       localStorage.setItem('widgetOrder', JSON.stringify(this.widgetOrder));
     },
@@ -1076,7 +1059,6 @@ function app() {
     },
 
     toggleTheme() {
-      // Cycle: dark -> light -> auto
       const themes = ['dark', 'light', 'auto'];
       const currentIndex = themes.indexOf(this.theme);
       this.theme = themes[(currentIndex + 1) % themes.length];
@@ -1088,16 +1070,16 @@ function app() {
     },
 
     getThemeIcon() {
-      if (this.theme === 'auto') return '🔄';
-      if (this.theme === 'dark') return '🌙';
-      return '☀️';
+      if (this.theme === 'auto') return 'A';
+      if (this.theme === 'dark') return 'D';
+      return 'L';
     },
 
     toggleFocusMode() {
       this.focusMode = !this.focusMode;
       localStorage.setItem('focusMode', this.focusMode);
       if (this.focusMode) {
-        this.showToast('Mode Focus activé - Concentre-toi ! 🎯', 'success');
+        this.showToast('Mode Focus activé', 'success');
       } else {
         this.showToast('Mode Focus désactivé', 'info');
       }
@@ -1115,12 +1097,9 @@ function app() {
       localStorage.setItem('favoriteLinks', JSON.stringify(this.favoriteLinks));
     },
 
-    // ============ SECURITY: URL Validation ============
-
     isValidUrl(urlString) {
       try {
         const url = new URL(urlString);
-        // Only allow http and https protocols (prevent javascript:, data:, etc.)
         if (!['http:', 'https:'].includes(url.protocol)) {
           return false;
         }
@@ -1130,11 +1109,8 @@ function app() {
       }
     },
 
-    // ============ SECURITY: HTML Sanitization ============
-
     sanitizeEmailHtml(html) {
       if (!html) return '';
-      // Use DOMPurify to sanitize HTML and prevent XSS attacks
       if (typeof DOMPurify !== 'undefined') {
         return DOMPurify.sanitize(html, {
           ALLOWED_TAGS: ['p', 'br', 'strong', 'em', 'u', 'a', 'ul', 'ol', 'li', 'div', 'span',
@@ -1147,7 +1123,6 @@ function app() {
           FORBID_ATTR: ['onerror', 'onload', 'onclick', 'onmouseover']
         });
       }
-      // Fallback: strip all HTML tags if DOMPurify is not available
       return html.replace(/<[^>]*>/g, '');
     },
 
@@ -1157,7 +1132,6 @@ function app() {
       if (!url.startsWith('http://') && !url.startsWith('https://')) {
         url = 'https://' + url;
       }
-      // Validate URL to prevent XSS via javascript: protocol
       if (!this.isValidUrl(url)) {
         this.showToast('URL invalide. Seuls http:// et https:// sont autorisés.', 'error');
         return;
@@ -1297,7 +1271,6 @@ function app() {
           body: JSON.stringify({ status: newStatus })
         });
 
-        // If recurring task was completed, create next occurrence
         if (wasCompleted && isRecurring) {
           await this.createNextRecurrence(this.draggingTask);
         }
@@ -1516,10 +1489,10 @@ function app() {
 
     showToast(message, type = 'info') {
       const icons = {
-        success: '✅',
-        error: '❌',
-        info: 'ℹ️',
-        warning: '⚠️'
+        success: '',
+        error: '',
+        info: '',
+        warning: ''
       };
 
       const toast = {
@@ -1598,9 +1571,8 @@ function app() {
         case 'monthly': {
           const currentDay = nextDate.getDate();
           nextDate.setMonth(nextDate.getMonth() + 1);
-          // Fix day overflow (e.g. Jan 31 -> Feb 28, not Mar 3)
           if (nextDate.getDate() !== currentDay) {
-            nextDate.setDate(0); // Go to last day of previous month
+            nextDate.setDate(0);
           }
           break;
         }
@@ -1624,7 +1596,7 @@ function app() {
 
       try {
         await this.sendJSON(`${this.API_BASE}/tasks`, newTaskPayload);
-        this.showToast(`🔄 Prochaine occurrence créée`, 'info');
+        this.showToast('Prochaine occurrence créée', 'info');
       } catch (err) {
         console.error('Error creating next recurrence:', err);
       }
@@ -1638,8 +1610,6 @@ function app() {
       };
       return labels[recurrence] || recurrence;
     },
-
-    // ============ GAMIFICATION ============
 
     initGamification() {
       this.updateStreak();
@@ -1665,7 +1635,6 @@ function app() {
       const diffDays = Math.floor((todayDate - lastDate) / (1000 * 60 * 60 * 24));
 
       if (diffDays > 1) {
-        // Streak broken
         this.gamification.streak = 0;
         this.saveGamification();
       }
@@ -1678,7 +1647,6 @@ function app() {
       this.gamification.xp += amount;
 
       if (!wasActiveToday) {
-        // New day activity
         const lastActive = this.gamification.lastActiveDate;
         if (lastActive) {
           const lastDate = new Date(lastActive);
@@ -1760,8 +1728,6 @@ function app() {
       return this.gamification.unlockedBadges.includes(badgeId);
     },
 
-    // ============ HABIT TRACKER ============
-
     saveHabits() {
       localStorage.setItem('habits', JSON.stringify(this.habits));
     },
@@ -1800,7 +1766,6 @@ function app() {
         delete this.habitHistory[key];
       } else {
         this.habitHistory[key] = true;
-        // Give XP for completing habit
         this.addXP(3, 'Habitude complétée');
       }
       this.saveHabitHistory();
@@ -1861,8 +1826,6 @@ function app() {
       return days;
     },
 
-    // ============ ANALYTICS ============
-
     async loadAnalytics() {
       try {
         const [daily, weekly, byStatus, byPriority, summary, avgTime] = await Promise.all([
@@ -1881,7 +1844,6 @@ function app() {
         this.analytics.summary = summary;
         this.analytics.avgCompletionTime = avgTime.average_hours;
 
-        // Render charts after data is loaded
         this.$nextTick(() => {
           this.renderDailyChart();
           this.renderStatusChart();
@@ -1898,7 +1860,6 @@ function app() {
       const ctx = document.getElementById('dailyChart');
       if (!ctx) return;
 
-      // Destroy existing chart
       if (this.analyticsCharts.daily) {
         this.analyticsCharts.daily.destroy();
       }
@@ -2062,8 +2023,6 @@ function app() {
       });
     },
 
-    // ============ PDF EXPORT ============
-
     exportTasksPDF() {
       if (typeof window.jspdf === 'undefined') {
         this.showToast('jsPDF non disponible. Verifiez votre connexion.', 'error');
@@ -2074,7 +2033,6 @@ function app() {
       const doc = new jsPDF();
       const pageWidth = doc.internal.pageSize.getWidth();
 
-      // Title
       doc.setFontSize(20);
       doc.setFont('helvetica', 'bold');
       doc.text('AutoDesk Kiwi - Taches', pageWidth / 2, 20, { align: 'center' });
@@ -2153,7 +2111,6 @@ function app() {
 
       let y = 40;
 
-      // Quick notes
       if (this.quickNotes && this.quickNotes.trim()) {
         doc.setFontSize(14);
         doc.setFont('helvetica', 'bold');
@@ -2172,7 +2129,6 @@ function app() {
         y += 10;
       }
 
-      // Grades
       if (this.hyperplanning.grades && this.hyperplanning.grades.length > 0) {
         if (y > 250) { doc.addPage(); y = 20; }
         doc.setFontSize(14);
@@ -2198,8 +2154,6 @@ function app() {
       doc.save(`kiwi-notes-${new Date().toISOString().split('T')[0]}.pdf`);
       this.showToast('PDF des notes exporte !', 'success');
     },
-
-    // ============ BROWSER NOTIFICATIONS ============
 
     async toggleNotifications() {
       if (this.notificationsEnabled) {
@@ -2241,7 +2195,6 @@ function app() {
           tag: 'pomodoro'
         });
       } catch (e) {
-        // Fallback: some browsers don't support the Notification constructor directly
       }
     },
 

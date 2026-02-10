@@ -13,8 +13,6 @@ engine = create_engine(
 
 
 def init_db() -> None:
-    """Initialize database and create all tables."""
-    # Import all models to ensure they are registered with SQLModel
     from models import Grade, Task  # noqa: F401
     from auth import User  # noqa: F401
 

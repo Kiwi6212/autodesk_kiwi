@@ -19,9 +19,7 @@ const CDN_ASSETS = [
 self.addEventListener('install', event => {
   event.waitUntil(
     caches.open(CACHE_NAME).then(cache => {
-      // Cache static assets (critical)
       const staticPromise = cache.addAll(STATIC_ASSETS);
-      // Cache CDN assets (best effort - don't fail install if CDN is down)
       const cdnPromise = Promise.allSettled(
         CDN_ASSETS.map(url => cache.add(url).catch(() => {}))
       );
@@ -49,10 +47,8 @@ self.addEventListener('fetch', event => {
 
   if (request.method !== 'GET') return;
 
-  // Don't cache API calls
   if (url.pathname.startsWith('/api')) return;
 
-  // CDN assets: cache-first (they're versioned)
   if (url.hostname === 'cdn.jsdelivr.net') {
     event.respondWith(
       caches.match(request).then(cached => {
@@ -69,7 +65,6 @@ self.addEventListener('fetch', event => {
     return;
   }
 
-  // Local assets: network-first with cache fallback
   if (url.origin === self.location.origin) {
     event.respondWith(
       fetch(request)

@@ -18,7 +18,6 @@
   --shadow: rgba(0, 0, 0, 0.3);
 }
 
-/* Accent color themes */
 [data-accent="blue"] { --accent: #4aa3ff; --accent-hover: #3a8fe5; --ring: rgba(74, 163, 255, 0.35); }
 [data-accent="purple"] { --accent: #a78bfa; --accent-hover: #8b5cf6; --ring: rgba(167, 139, 250, 0.35); }
 [data-accent="green"] { --accent: #4ade80; --accent-hover: #22c55e; --ring: rgba(74, 222, 128, 0.35); }
@@ -151,7 +150,6 @@ main {
   padding: 12px 0;
 }
 
-/* View transition animations */
 .view-enter {
   animation: viewFadeIn 0.3s ease-out;
 }
@@ -380,7 +378,6 @@ main {
   accent-color: var(--accent);
 }
 
-/* Completed tasks styling */
 .task-item:has(.task-checkbox:checked) .task-title {
   text-decoration: line-through;
   opacity: 0.6;
@@ -1783,8 +1780,6 @@ footer {
   border-radius: 10px;
 }
 
-/* ============ GAMIFICATION ============ */
-
 .gamification-card {
   background: linear-gradient(135deg, var(--panel) 0%, rgba(74, 163, 255, 0.05) 100%);
 }
@@ -1932,8 +1927,6 @@ footer {
 .badge-item.unlocked .badge-name {
   color: var(--text);
 }
-
-/* ============ HABIT TRACKER ============ */
 
 .habit-tracker-card {
   padding: 16px;
@@ -2106,8 +2099,6 @@ footer {
   }
 }
 
-/* ============ THEME PICKER ============ */
-
 .theme-picker {
   display: flex;
   flex-wrap: wrap;
@@ -2146,8 +2137,6 @@ footer {
 .color-swatch.cyan { background: #22d3ee; }
 .color-swatch.red { background: #f87171; }
 .color-swatch.yellow { background: #facc15; color: #1f2937; }
-
-/* ============ DRAGGABLE WIDGETS ============ */
 
 .widgets-grid {
   display: grid;
@@ -2228,8 +2217,6 @@ footer {
 .widget-collapsed .widget-toggle {
   transform: rotate(-90deg);
 }
-
-/* ============ ANALYTICS SECTION ============ */
 
 .analytics-summary {
   display: grid;
@@ -2325,10 +2312,6 @@ footer {
   color: var(--text);
 }
 
-/* ========================
-   Tags System
-======================== */
-
 .task-tags {
   display: flex;
   flex-wrap: wrap;
@@ -2353,7 +2336,6 @@ footer {
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
 }
 
-/* Tag Colors */
 .tag-travail { background: rgba(74, 163, 255, 0.15); border-color: rgba(74, 163, 255, 0.4); color: #4aa3ff; }
 .tag-personnel { background: rgba(139, 92, 246, 0.15); border-color: rgba(139, 92, 246, 0.4); color: #8b5cf6; }
 .tag-urgent { background: rgba(239, 68, 68, 0.15); border-color: rgba(239, 68, 68, 0.4); color: #ef4444; }
@@ -2364,7 +2346,6 @@ footer {
 .tag-projets { background: rgba(99, 102, 241, 0.15); border-color: rgba(99, 102, 241, 0.4); color: #6366f1; }
 .tag-default { background: rgba(107, 114, 128, 0.15); border-color: rgba(107, 114, 128, 0.4); color: #6b7280; }
 
-/* Tags Input Section */
 .tags-input-section {
   display: flex;
   flex-direction: column;
@@ -2408,7 +2389,6 @@ footer {
   opacity: 1;
 }
 
-/* Apply same colors to presets */
 .tag-preset[data-tag="travail"] { border-color: rgba(74, 163, 255, 0.4); color: #4aa3ff; }
 .tag-preset[data-tag="personnel"] { border-color: rgba(139, 92, 246, 0.4); color: #8b5cf6; }
 .tag-preset[data-tag="urgent"] { border-color: rgba(239, 68, 68, 0.4); color: #ef4444; }
@@ -2427,7 +2407,6 @@ footer {
 .tag-preset.active[data-tag="courses"] { background: rgba(16, 185, 129, 0.15); }
 .tag-preset.active[data-tag="projets"] { background: rgba(99, 102, 241, 0.15); }
 
-/* Tags Filter */
 .tags-filter {
   display: flex;
   flex-wrap: wrap;
@@ -2456,8 +2435,6 @@ footer {
   border-color: rgba(74, 163, 255, 0.4);
   color: #4aa3ff;
 }
-
-/* ============ AUTHENTICATION ============ */
 
 .auth-nav {
   display: flex;
@@ -2532,7 +2509,6 @@ footer {
   text-decoration: underline;
 }
 
-/* Keyboard Shortcuts Modal */
 .shortcuts-modal {
   max-width: 480px;
 }

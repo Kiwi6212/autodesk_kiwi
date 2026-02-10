@@ -1,5 +1,3 @@
-version: "3.8"
-
 services:
   kiwi:
     build: .
@@ -7,9 +5,7 @@ services:
     ports:
       - "8000:8000"
     volumes:
-      # Persist database
       - kiwi-data:/app/data
-      # Optional: mount .env file
       - ./.env:/app/api/.env:ro
     environment:
       - DATABASE_URL=sqlite:////app/data/data.db

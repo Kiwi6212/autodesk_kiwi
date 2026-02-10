@@ -1,5 +1,3 @@
-"""Analytics and productivity statistics endpoints."""
-
 from datetime import datetime, timedelta, timezone
 
 from fastapi import APIRouter
@@ -16,12 +14,10 @@ logger = setup_logger("analytics")
 
 @router.get("/tasks/daily")
 def get_daily_task_stats(days: int = 30):
-    """Get task completion stats for the last N days."""
     with get_session() as session:
         end_date = datetime.now(timezone.utc)
         start_date = end_date - timedelta(days=days)
 
-        # Get completed tasks grouped by day
         statement = (
             select(
                 func.date(Task.completed_at).label("date"),
@@ -36,7 +32,6 @@ def get_daily_task_stats(days: int = 30):
 
         results = session.exec(statement).all()
 
-        # Fill in missing days with 0
         date_counts = {str(r.date): r.count for r in results}
         daily_stats = []
 
@@ -52,12 +47,10 @@ def get_daily_task_stats(days: int = 30):
 
 @router.get("/tasks/weekly")
 def get_weekly_task_stats(weeks: int = 12):
-    """Get task completion stats for the last N weeks."""
     with get_session() as session:
         end_date = datetime.now(timezone.utc)
         start_date = end_date - timedelta(weeks=weeks)
 
-        # Get completed tasks grouped by week
         statement = (
             select(
                 func.strftime("%Y-%W", Task.completed_at).label("week"),
@@ -77,7 +70,6 @@ def get_weekly_task_stats(weeks: int = 12):
 
 @router.get("/tasks/by-priority")
 def get_tasks_by_priority():
-    """Get task distribution by priority."""
     with get_session() as session:
         statement = (
             select(Task.priority, func.count(Task.id).label("count"))
@@ -92,7 +84,6 @@ def get_tasks_by_priority():
 
 @router.get("/tasks/by-status")
 def get_tasks_by_status():
-    """Get task distribution by status."""
     with get_session() as session:
         statement = (
             select(Task.status, func.count(Task.id).label("count"))
@@ -107,7 +98,6 @@ def get_tasks_by_status():
 
 @router.get("/tasks/completion-rate")
 def get_completion_rate():
-    """Get overall task completion rate."""
     with get_session() as session:
         total = session.exec(
             select(func.count(Task.id)).where(Task.parent_id.is_(None))
@@ -131,9 +121,7 @@ def get_completion_rate():
 
 @router.get("/tasks/average-completion-time")
 def get_average_completion_time():
-    """Get average time to complete tasks (in hours)."""
     with get_session() as session:
-        # Get tasks that have both created_at and completed_at
         statement = select(Task).where(
             Task.completed_at.is_not(None),
             Task.parent_id.is_(None),
@@ -160,47 +148,40 @@ def get_average_completion_time():
 
 @router.get("/productivity/summary")
 def get_productivity_summary():
-    """Get a complete productivity summary."""
     with get_session() as session:
         now = datetime.now(timezone.utc)
         today_start = now.replace(hour=0, minute=0, second=0, microsecond=0)
         week_start = today_start - timedelta(days=now.weekday())
         month_start = today_start.replace(day=1)
 
-        # Tasks completed today
         today_completed = session.exec(
             select(func.count(Task.id))
             .where(Task.completed_at >= today_start)
             .where(Task.parent_id.is_(None))
         ).one()
 
-        # Tasks completed this week
         week_completed = session.exec(
             select(func.count(Task.id))
             .where(Task.completed_at >= week_start)
             .where(Task.parent_id.is_(None))
         ).one()
 
-        # Tasks completed this month
         month_completed = session.exec(
             select(func.count(Task.id))
             .where(Task.completed_at >= month_start)
             .where(Task.parent_id.is_(None))
         ).one()
 
-        # Total tasks
         total_tasks = session.exec(
             select(func.count(Task.id)).where(Task.parent_id.is_(None))
         ).one()
 
-        # Pending tasks
         pending_tasks = session.exec(
             select(func.count(Task.id))
             .where(Task.status.in_(["todo", "doing"]))
             .where(Task.parent_id.is_(None))
         ).one()
 
-        # Overdue tasks
         overdue_tasks = session.exec(
             select(func.count(Task.id))
             .where(Task.due_date < now)
@@ -208,14 +189,12 @@ def get_productivity_summary():
             .where(Task.parent_id.is_(None))
         ).one()
 
-        # Completed tasks total
         completed_total = session.exec(
             select(func.count(Task.id))
             .where(Task.status == "done")
             .where(Task.parent_id.is_(None))
         ).one()
 
-        # Calculate completion rate
         completion_rate = round((completed_total / total_tasks * 100), 1) if total_tasks > 0 else 0
 
         return {

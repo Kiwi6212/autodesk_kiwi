@@ -1,65 +1,42 @@
-# 🗺️ Roadmap - AutoDesk Kiwi
+# Roadmap
 
-This document outlines the major future developments for AutoDesk Kiwi.
+## Completed
 
-## ✅ Completed
+- [x] Due dates for tasks
+- [x] Customizable tags and categories
+- [x] PWA with offline support
+- [x] Dark/light/auto theme with accent colors
+- [x] Spotify integration with playback controls
+- [x] Email integration (Proton Mail via Bridge)
+- [x] Email viewer with full content display
+- [x] Pomodoro timer with browser notifications
+- [x] Quick notes widget
+- [x] Favorite links widget
+- [x] Event countdown widget
+- [x] Data export/import (JSON)
+- [x] Kanban board with drag and drop
+- [x] Keyboard shortcuts
+- [x] Dynamic quotes
+- [x] Hyperplanning integration (courses, grades)
+- [x] Focus mode
+- [x] Subtasks with progress tracking
+- [x] Lofi radio player
+- [x] View transition animations
+- [x] Gamification (XP, levels, streaks, badges)
+- [x] Habit tracker with 7-day grid
+- [x] Recurring tasks (daily, weekly, monthly)
+- [x] Unit tests (pytest)
+- [x] Linter/formatter (ruff)
+- [x] 8 accent color themes
+- [x] Draggable widget infrastructure
+- [x] JWT authentication
+- [x] PDF export
+- [x] Security hardening (rate limiting, SSRF protection, XSS sanitization)
 
-- [x] **Due dates** for tasks
-- [x] **Customizable tags/categories** for tasks
-- [x] **PWA** (Progressive Web App) with offline support
-- [x] **Dark/Light mode** toggle with automatic system detection
-- [x] **Spotify integration** with playback controls
-- [x] **Email integration** (Proton Mail via Bridge)
-- [x] **Email viewer** - click to open full email content
-- [x] **Pomodoro timer** widget
-- [x] **Quick notes** widget
-- [x] **Favorite links** widget
-- [x] **Event countdown** widget
-- [x] **Data export/import** (JSON backup)
-- [x] **Drag & drop** for tasks (Kanban board)
-- [x] **Keyboard shortcuts** (N: new task, /: search, Esc: close)
-- [x] **Dynamic quotes** from API
-- [x] **Hyperplanning integration** (courses, grades)
-- [x] **Focus mode** - hide distractions, keep essentials
-- [x] **Subtasks** - nested tasks with progress tracking
-- [x] **Lofi radio player** - Lofi Girl YouTube stream integration
-- [x] **Smooth view transitions** - animated transitions between views
-- [x] **Gamification** - XP system, levels, streaks, and unlockable badges
-- [x] **Habit tracker** - daily habit tracking with 7-day calendar grid
-- [x] **Recurring tasks** - daily, weekly, monthly task recurrence with auto-recreation
-- [x] **Unit tests** - pytest tests for backend API
-- [x] **Linter/formatter** - ruff configuration for code quality
-- [x] **Customizable themes** - 8 accent colors (blue, purple, green, orange, pink, cyan, red, yellow)
-- [x] **Widget infrastructure** - CSS and JS support for draggable widgets
+## Planned
 
-## 📅 Short Term (Q1)
-- **Tech**:
-  - [x] Add unit tests for the backend (`pytest`).
-  - [x] Set up a linter/formatter (`ruff` or `black`).
-
-## 📅 Medium Term (Q2)
-
-- [ ] **Authentication & Multi-user**:
-  - [ ] Login/register system (JWT).
-  - [ ] Secure API endpoints.
-- [ ] **Cloud Synchronization**:
-  - [ ] Ability to save the database to the cloud (e.g., S3, Google Drive).
-- [ ] **Customization**:
-  - [x] Customizable themes (colors, fonts).
-  - [x] Configurable/draggable widgets on the dashboard.
-
-## 📅 Long Term (Q3+)
-
-- [ ] **Push Notifications**:
-  - [ ] Task and event reminders on browser/mobile.
-- [ ] **Advanced Integrations**:
-  - [ ] Direct connection to Google Calendar / Outlook Calendar APIs (read/write).
-  - [ ] Notion or Obsidian integration.
-- [ ] **Dockerization**:
-  - [ ] Create a `Dockerfile` and `docker-compose.yml` for easy deployment.
-
-## 💡 Random Ideas
-
-- Voice command to add tasks.
-- Productivity analysis (progress charts).
-- Study statistics with time tracking.
+- [ ] Cloud synchronization (S3, Google Drive)
+- [ ] Push notifications for reminders
+- [ ] Google Calendar / Outlook Calendar API integration
+- [ ] Notion or Obsidian integration
+- [ ] Productivity analytics with time tracking

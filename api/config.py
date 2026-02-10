@@ -7,7 +7,6 @@ from pydantic_settings import BaseSettings
 
 
 def _get_or_create_jwt_secret() -> str:
-    """Get JWT secret from env or generate and persist one."""
     env_secret = os.getenv("JWT_SECRET_KEY")
     if env_secret and env_secret != "CHANGEZ-MOI-EN-PRODUCTION-avec-une-cle-secrete-unique":
         return env_secret
@@ -23,7 +22,7 @@ def _get_or_create_jwt_secret() -> str:
 
 class Settings(BaseSettings):
     app_name: str = "AutoDesk Kiwi API"
-    app_version: str = "1.1.0"
+    app_version: str = "1.2.0"
     debug: bool = False
 
     database_url: str = "sqlite:///data.db"
@@ -42,14 +41,11 @@ class Settings(BaseSettings):
 
     hyperplanning_url: str = ""
 
-    # JWT Authentication settings
     jwt_secret_key: str = _get_or_create_jwt_secret()
-    jwt_expire_minutes: int = 1440  # 24 hours
+    jwt_expire_minutes: int = 1440
 
-    # Rate limiting settings
     rate_limit_per_minute: int = 60
 
-    # Security: Allowed calendar URL domains (for SSRF protection)
     allowed_calendar_domains: list[str] = [
         "hyperplanning.fr",
         "ensup.eu",

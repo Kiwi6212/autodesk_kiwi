@@ -38,28 +38,28 @@
 
   
   <header class="topbar">
-    <h1 @click="currentView = 'today'" style="cursor: pointer;">🥝 AutoDesk Kiwi</h1>
+    <h1 @click="currentView = 'today'" style="cursor: pointer;">AutoDesk Kiwi</h1>
     <nav class="tabs">
       <button class="tab" :class="{ active: currentView === 'today' }" @click="currentView = 'today'">
-        📅 Aujourd'hui
+        Aujourd'hui
       </button>
       <button class="tab" :class="{ active: currentView === 'tasks' }" @click="currentView = 'tasks'">
-        ✅ Tâches
+        Tâches
       </button>
       <button class="tab" :class="{ active: currentView === 'weather' }" @click="currentView = 'weather'">
-        🌤️ Météo
+        Météo
       </button>
       <button class="tab" :class="{ active: currentView === 'hyperplanning' }" @click="currentView = 'hyperplanning'">
-        🎓 Hyperplanning
+        Hyperplanning
       </button>
       <button class="tab" :class="{ active: currentView === 'mail' }" @click="currentView = 'mail'">
-        📬 Mail
+        Mail
       </button>
       <button class="tab" :class="{ active: currentView === 'analytics' }" @click="currentView = 'analytics'; loadAnalytics()">
-        📊 Stats
+        Stats
       </button>
       <button class="tab" :class="{ active: currentView === 'settings' }" @click="currentView = 'settings'">
-        ⚙️ Paramètres
+        Paramètres
       </button>
       <button class="tab theme-toggle" @click="showShortcutsHelp = true" title="Raccourcis clavier (?)">
         ⌨️
@@ -74,12 +74,12 @@
       <div class="auth-nav">
         <template x-if="auth.isAuthenticated">
           <div class="user-menu">
-            <span class="user-badge">👤 <span x-text="auth.user?.username"></span></span>
-            <button class="btn btn-sm" @click="logout()" title="Déconnexion">🚪</button>
+            <span class="user-badge"><span x-text="auth.user?.username"></span></span>
+            <button class="btn btn-sm" @click="logout()" title="Déconnexion">Logout</button>
           </div>
         </template>
         <template x-if="!auth.isAuthenticated">
-          <button class="btn btn-primary btn-sm" @click="auth.showLogin = true">🔐 Connexion</button>
+          <button class="btn btn-primary btn-sm" @click="auth.showLogin = true">Connexion</button>
         </template>
       </div>
     </nav>
@@ -146,7 +146,6 @@
     </div>
   </div>
 
-  <!-- Keyboard Shortcuts Modal -->
   <div x-show="showShortcutsHelp" class="modal-overlay" @click.self="showShortcutsHelp = false" x-transition>
     <div class="modal shortcuts-modal">
       <div class="modal-header">
@@ -178,7 +177,7 @@
 
 
     <section x-show="currentView === 'today'" x-transition:enter="view-enter" x-transition:leave="view-leave" class="view">
-      <h2>📅 Résumé du jour</h2>
+      <h2>Résumé du jour</h2>
 
       
       <div class="today-widgets">
@@ -199,7 +198,7 @@
             <button @click="skipPomodoro()" class="btn" title="Passer">⏭️</button>
           </div>
           <div class="pomodoro-count">
-            🍅 <span x-text="pomodoro.completedPomodoros"></span> pomodoro(s)
+            <span x-text="pomodoro.completedPomodoros"></span> pomodoro(s)
           </div>
         </div>
       </div>
@@ -213,16 +212,16 @@
       </div>
 
       <div class="card" x-show="!focusMode && (hyperplanning.nextCourses.length || weather.current.temp || email.count !== null)">
-        <p x-show="hyperplanning.nextCourses.length"><strong>📆 Prochain cours:</strong>
+        <p x-show="hyperplanning.nextCourses.length"><strong>Prochain cours:</strong>
           <span x-text="hyperplanning.nextCourses[0]?.subject"></span> à
           <span x-text="hyperplanning.nextCourses[0]?.start"></span>
           <span x-show="hyperplanning.nextCourses[0]?.room">(<span x-text="hyperplanning.nextCourses[0]?.room"></span>)</span>
         </p>
-        <p x-show="weather.current.temp"><strong>🌡️ Météo <span x-text="weather.location"></span>:</strong> 
+        <p x-show="weather.current.temp"><strong>Météo <span x-text="weather.location"></span>:</strong> 
           <span x-text="Math.round(weather.current.temp)"></span>°C - 
           <span x-text="getWeatherDesc(weather.current.weathercode)"></span>
         </p>
-        <p x-show="email.count !== null"><strong>📬 Proton Mail:</strong>
+        <p x-show="email.count !== null"><strong>Proton Mail:</strong>
           <span x-text="email.count"></span> non lu(s)
           <span x-show="email.error" style="color: var(--danger);">(<span x-text="email.error"></span>)</span>
         </p>
@@ -230,7 +229,7 @@
 
       
       <div x-show="!focusMode">
-      <h3>📝 Notes rapides</h3>
+      <h3>Notes rapides</h3>
       <div class="card quick-notes-card">
         <textarea
           class="quick-notes-textarea"
@@ -242,7 +241,7 @@
       </div>
 
       <div x-show="!focusMode">
-      <h3>🔗 Liens favoris <button class="btn-icon" @click="showAddLink = !showAddLink" title="Ajouter un lien">➕</button></h3>
+      <h3>Liens favoris <button class="btn-icon" @click="showAddLink = !showAddLink" title="Ajouter un lien">➕</button></h3>
       <div class="card favorite-links-card">
         
         <div class="add-link-form" x-show="showAddLink" x-transition>
@@ -264,7 +263,7 @@
       </div>
 
       <div x-show="!focusMode">
-      <h3>⏳ Compte à rebours <button class="btn-icon" @click="showAddCountdown = !showAddCountdown" title="Ajouter un événement">➕</button></h3>
+      <h3>Compte à rebours <button class="btn-icon" @click="showAddCountdown = !showAddCountdown" title="Ajouter un événement">➕</button></h3>
       <div class="card countdowns-card">
         
         <div class="add-countdown-form" x-show="showAddCountdown" x-transition>
@@ -294,7 +293,7 @@
 
       <div class="card lofi-card">
         <div class="lofi-header" @click="toggleLofiPlayer()">
-          <h4 style="margin: 0;">🎵 Lofi Hip Hop Radio</h4>
+          <h4 style="margin: 0;">Lofi Hip Hop Radio</h4>
           <span class="lofi-toggle" x-text="lofiPlayer.show ? '▼' : '▶'"></span>
         </div>
         <div class="lofi-player" x-show="lofiPlayer.show" x-transition>
@@ -311,7 +310,7 @@
       </div>
 
       <div x-show="!focusMode">
-      <h3>📊 Statistiques des tâches</h3>
+      <h3>Statistiques des tâches</h3>
       <div class="stats-grid">
         <div class="stat-card">
           <div class="stat-value" x-text="stats.total || 0"></div>
@@ -332,9 +331,8 @@
       </div>
       </div>
 
-      <!-- Gamification Section -->
       <div x-show="!focusMode">
-      <h3>🎮 Progression</h3>
+      <h3>Progression</h3>
       <div class="card gamification-card">
         <div class="gamification-header">
           <div class="level-info">
@@ -370,7 +368,7 @@
         </div>
 
         <div class="badges-section">
-          <h4>🏅 Badges</h4>
+          <h4>Badges</h4>
           <div class="badges-grid">
             <template x-for="badge in badges" :key="badge.id">
               <div class="badge-item" :class="{ 'unlocked': isBadgeUnlocked(badge.id) }" :title="badge.desc">
@@ -383,11 +381,9 @@
       </div>
       </div>
 
-      <!-- Habit Tracker Section -->
       <div x-show="!focusMode">
-      <h3>📋 Habitudes <button class="btn-icon" @click="showAddHabit = !showAddHabit" title="Ajouter une habitude">➕</button></h3>
+      <h3>Habitudes <button class="btn-icon" @click="showAddHabit = !showAddHabit" title="Ajouter une habitude">➕</button></h3>
       <div class="card habit-tracker-card">
-        <!-- Add habit form -->
         <div class="add-habit-form" x-show="showAddHabit" x-transition>
           <input type="text" x-model="newHabit.name" placeholder="Nom de l'habitude" class="input-field" @keyup.enter="addHabit()">
           <select x-model="newHabit.icon" class="icon-select">
@@ -405,9 +401,7 @@
           <button class="btn primary" @click="addHabit()">Ajouter</button>
         </div>
 
-        <!-- Habit list with calendar grid -->
         <div class="habits-list" x-show="habits.length">
-          <!-- Header with days -->
           <div class="habit-row habit-header">
             <div class="habit-name-col"></div>
             <template x-for="day in getLast7Days()" :key="day.date">
@@ -419,7 +413,6 @@
             <div class="habit-streak-col">Streak</div>
           </div>
 
-          <!-- Habit rows -->
           <template x-for="habit in habits" :key="habit.id">
             <div class="habit-row">
               <div class="habit-name-col">
@@ -452,12 +445,12 @@
       </div>
 
       <div x-show="!focusMode">
-      <h3>🎵 Spotify</h3>
+      <h3>Spotify</h3>
       <div class="card spotify-card">
         
         <div x-show="!spotify.connected && !spotify.error.includes('not configured')">
           <p style="margin-bottom: 15px;">Connectez-vous à Spotify pour voir votre musique en cours.</p>
-          <button @click="spotifyLogin()" class="primary">🔗 Se connecter à Spotify</button>
+          <button @click="spotifyLogin()" class="primary">Se connecter à Spotify</button>
         </div>
 
         
@@ -498,7 +491,7 @@
             <button x-show="!spotify.track?.is_playing" @click="spotifyPlay()" class="primary spotify-btn" title="Lecture">▶️</button>
             <button x-show="spotify.track?.is_playing" @click="spotifyPause()" class="primary spotify-btn" title="Pause">⏸️</button>
             <button @click="spotifyNext()" class="btn spotify-btn" title="Suivant">⏭️</button>
-            <button @click="spotifyLogout()" class="btn spotify-btn-small" title="Déconnexion" style="margin-left: auto;">🚪</button>
+            <button @click="spotifyLogout()" class="btn spotify-btn-small" title="Déconnexion" style="margin-left: auto;">Logout</button>
           </div>
         </div>
       </div>
@@ -507,7 +500,7 @@
 
 
     <section x-show="currentView === 'tasks'" x-transition:enter="view-enter" x-transition:leave="view-leave" class="view">
-      <h2>✅ Gestion des tâches</h2>
+      <h2>Gestion des tâches</h2>
 
       
       <form @submit.prevent="addTask()" class="toolbar task-form">
@@ -539,11 +532,11 @@
         />
         <select x-model="newTask.recurrence" title="Récurrence">
           <option value="">Pas de récurrence</option>
-          <option value="daily">🔄 Quotidien</option>
-          <option value="weekly">🔄 Hebdomadaire</option>
-          <option value="monthly">🔄 Mensuel</option>
+          <option value="daily">Quotidien</option>
+          <option value="weekly">Hebdomadaire</option>
+          <option value="monthly">Mensuel</option>
         </select>
-        <button type="submit" class="primary">➕ Ajouter</button>
+        <button type="submit" class="primary">Ajouter</button>
       </form>
 
       
@@ -552,7 +545,7 @@
           x-model="filters.q" 
           @input="debouncedLoadTasks()"
           type="search" 
-          placeholder="🔍 Rechercher…"
+          placeholder="Rechercher…"
           class="grow"
         />
         <select x-model="filters.status" @change="loadTasks()">
@@ -587,11 +580,11 @@
           class="danger"
           :disabled="selectedTasks.length === 0"
         >
-          🗑️ Supprimer (<span x-text="selectedTasks.length"></span>)
+          Supprimer (<span x-text="selectedTasks.length"></span>)
         </button>
         <button @click="toggleTaskViewMode()" class="btn" title="Changer de vue">
-          <span x-show="taskViewMode === 'list'">📋 Kanban</span>
-          <span x-show="taskViewMode === 'kanban'">📝 Liste</span>
+          <span x-show="taskViewMode === 'list'">Kanban</span>
+          <span x-show="taskViewMode === 'kanban'">Liste</span>
         </button>
       </div>
 
@@ -617,16 +610,16 @@
                   <span class="status-badge badge" :class="task.status" x-text="mapStatus(task.status)"></span>
                   <span class="badge" :class="task.priority" x-text="task.priority"></span>
                   <span x-show="task.due_date" class="due-date" :class="{ 'overdue': isOverdue(task), 'due-soon': isDueSoon(task) }">
-                    📅 <span x-text="formatDueDate(task.due_date)"></span>
+                    <span x-text="formatDueDate(task.due_date)"></span>
                   </span>
                   <template x-for="tag in getTaskTags(task)" :key="tag">
                     <span class="tag" :class="getTagClass(tag)" x-text="tag"></span>
                   </template>
                   <span x-show="task.recurrence" class="recurrence-badge" :title="getRecurrenceLabel(task.recurrence)">
-                    🔄 <span x-text="getRecurrenceLabel(task.recurrence)"></span>
+                    <span x-text="getRecurrenceLabel(task.recurrence)"></span>
                   </span>
                   <span x-show="task.subtasks?.length" class="subtask-count">
-                    📋 <span x-text="task.subtasks?.filter(s => s.status === 'done').length"></span>/<span x-text="task.subtasks?.length"></span>
+                    <span x-text="task.subtasks?.filter(s => s.status === 'done').length"></span>/<span x-text="task.subtasks?.length"></span>
                   </span>
                 </div>
               </div>
@@ -681,7 +674,7 @@
              @dragleave="onDragLeave($event)"
              @drop="onDrop($event, 'todo')">
           <div class="kanban-header todo">
-            <span>📋 À faire</span>
+            <span>À faire</span>
             <span class="kanban-count" x-text="getTasksByStatus('todo').length"></span>
           </div>
           <div class="kanban-items">
@@ -695,7 +688,7 @@
                   <span class="badge" :class="task.priority" x-text="task.priority"></span>
                   <span x-show="task.recurrence" class="recurrence-badge-small" title="Récurrent">🔄</span>
                   <span x-show="task.due_date" class="due-date" :class="{ 'overdue': isOverdue(task) }">
-                    📅 <span x-text="formatDueDate(task.due_date)"></span>
+                    <span x-text="formatDueDate(task.due_date)"></span>
                   </span>
                   <template x-for="tag in getTaskTags(task)" :key="tag">
                     <span class="tag" :class="getTagClass(tag)" x-text="tag"></span>
@@ -713,7 +706,7 @@
              @dragleave="onDragLeave($event)"
              @drop="onDrop($event, 'doing')">
           <div class="kanban-header doing">
-            <span>🔄 En cours</span>
+            <span>En cours</span>
             <span class="kanban-count" x-text="getTasksByStatus('doing').length"></span>
           </div>
           <div class="kanban-items">
@@ -727,7 +720,7 @@
                   <span class="badge" :class="task.priority" x-text="task.priority"></span>
                   <span x-show="task.recurrence" class="recurrence-badge-small" title="Récurrent">🔄</span>
                   <span x-show="task.due_date" class="due-date" :class="{ 'overdue': isOverdue(task) }">
-                    📅 <span x-text="formatDueDate(task.due_date)"></span>
+                    <span x-text="formatDueDate(task.due_date)"></span>
                   </span>
                   <template x-for="tag in getTaskTags(task)" :key="tag">
                     <span class="tag" :class="getTagClass(tag)" x-text="tag"></span>
@@ -745,7 +738,7 @@
              @dragleave="onDragLeave($event)"
              @drop="onDrop($event, 'done')">
           <div class="kanban-header done">
-            <span>✅ Terminées</span>
+            <span>Terminées</span>
             <span class="kanban-count" x-text="getTasksByStatus('done').length"></span>
           </div>
           <div class="kanban-items">
@@ -819,9 +812,9 @@
               <label>Récurrence</label>
               <select x-model="editingTask.recurrence">
                 <option value="">Pas de récurrence</option>
-                <option value="daily">🔄 Quotidien</option>
-                <option value="weekly">🔄 Hebdomadaire</option>
-                <option value="monthly">🔄 Mensuel</option>
+                <option value="daily">Quotidien</option>
+                <option value="weekly">Hebdomadaire</option>
+                <option value="monthly">Mensuel</option>
               </select>
             </div>
             <div class="modal-actions">
@@ -835,7 +828,7 @@
 
     
     <section x-show="currentView === 'weather'" x-transition:enter="view-enter" x-transition:leave="view-leave" class="view">
-      <h2>🌤️ Météo <span x-text="weather.location" style="color: var(--muted);"></span></h2>
+      <h2>Météo <span x-text="weather.location" style="color: var(--muted);"></span></h2>
       
       <div class="card" x-show="weather.current.temp">
         <p style="font-size: 1.8rem; margin: 0;">
@@ -868,14 +861,14 @@
 
     
     <section x-show="currentView === 'hyperplanning'" x-transition:enter="view-enter" x-transition:leave="view-leave" class="view">
-      <h2>🎓 Hyperplanning</h2>
+      <h2>Hyperplanning</h2>
       
       <div class="hp-grid">
         
         <div class="hp-column">
-          <h3 x-text="'📅 Emploi du temps (' + (hyperplanning.schedule.display_date || 'Aujourd\'hui') + ')'"></h3>
+          <h3 x-text="'Emploi du temps (' + (hyperplanning.schedule.display_date || 'Aujourd\'hui') + ')'"></h3>
           <div class="card" x-show="hyperplanning.schedule.courses.length === 0">
-            <p class="empty">Aucun cours prévu pour cette date 🎉</p>
+            <p class="empty">Aucun cours prévu pour cette date</p>
           </div>
           <div class="timeline">
             <template x-for="course in hyperplanning.schedule.courses" :key="course.id">
@@ -887,8 +880,8 @@
                 <div class="timeline-content" :class="{'active': isCurrentCourse(course)}">
                   <div class="timeline-marker"></div>
                   <h4 x-text="course.subject"></h4>
-                  <p class="location">📍 <span x-text="course.room"></span></p>
-                  <p class="teacher">👨‍🏫 <span x-text="course.teacher"></span></p>
+                  <p class="location"><span x-text="course.room"></span></p>
+                  <p class="teacher"><span x-text="course.teacher"></span></p>
                   <span class="badge" :class="course.type === 'TP' ? 'high' : 'normal'" x-text="course.type"></span>
                 </div>
               </div>
@@ -897,7 +890,7 @@
 
           
           <div class="card" style="margin-top: 20px;">
-            <h3>⏩ Prochains cours</h3>
+            <h3>Prochains cours</h3>
             <ul class="list">
               <template x-for="course in hyperplanning.nextCourses" :key="course.id">
                 <li class="grade-item"> 
@@ -924,10 +917,10 @@
         
         <div class="hp-column">
           <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
-            <h3 style="margin: 0;">📝 Dernières notes</h3>
+            <h3 style="margin: 0;">Dernières notes</h3>
             <button @click="hyperplanning.showImport = !hyperplanning.showImport" class="btn" style="font-size: 0.85rem; padding: 5px 10px;">
-              <span x-show="!hyperplanning.showImport">➕ Importer</span>
-              <span x-show="hyperplanning.showImport">✖️ Fermer</span>
+              <span x-show="!hyperplanning.showImport">Importer</span>
+              <span x-show="hyperplanning.showImport">Fermer</span>
             </button>
           </div>
 
@@ -947,8 +940,8 @@
               style="width: 100%; padding: 10px; background: var(--bg); color: var(--text); border: 1px solid var(--muted); border-radius: 5px; font-family: monospace; font-size: 0.85rem; resize: vertical;"
             ></textarea>
             <div style="display: flex; gap: 10px; margin-top: 10px;">
-              <button @click="importGrades()" class="primary" style="flex: 1;">✅ Importer</button>
-              <button @click="clearGrades()" class="danger">🗑️ Tout supprimer</button>
+              <button @click="importGrades()" class="primary" style="flex: 1;">Importer</button>
+              <button @click="clearGrades()" class="danger">Tout supprimer</button>
             </div>
           </div>
 
@@ -971,7 +964,7 @@
             </div>
           </div>
 
-          <h3 style="margin-top: 20px;">📚 Enseignements par matière</h3>
+          <h3 style="margin-top: 20px;">Enseignements par matière</h3>
           <div class="card">
             <div class="stats-grid" style="grid-template-columns: repeat(auto-fill, minmax(120px, 1fr)); gap: 15px;">
               <template x-for="stat in hyperplanning.stats" :key="stat.subject">
@@ -989,10 +982,10 @@
             </div>
           </div>
 
-          <h3 style="margin-top: 20px;">🔗 Accès rapide</h3>
+          <h3 style="margin-top: 20px;">Accès rapide</h3>
           <div class="card">
             <a href="https://extranet-hp-cgy.ensup.eu/hp-cgy/etudiant" target="_blank" class="hp-link">
-              🌍 Ouvrir Hyperplanning (Extranet) ↗
+              Ouvrir Hyperplanning (Extranet)
             </a>
           </div>
         </div>
@@ -1001,7 +994,7 @@
 
     
     <section x-show="currentView === 'mail'" x-transition:enter="view-enter" x-transition:leave="view-leave" class="view">
-      <h2>📬 Proton Mail</h2>
+      <h2>Proton Mail</h2>
 
       
       <div class="card" style="margin-bottom: 20px;">
@@ -1012,11 +1005,11 @@
           </div>
           <div style="display: flex; gap: 10px;">
             <button @click="email.showCompose = !email.showCompose" class="primary" style="padding: 8px 15px;">
-              <span x-show="!email.showCompose">✉️ Nouveau</span>
-              <span x-show="email.showCompose">✖️ Fermer</span>
+              <span x-show="!email.showCompose">Nouveau</span>
+              <span x-show="email.showCompose">Fermer</span>
             </button>
             <button @click="loadEmail()" class="btn" style="padding: 8px 15px;">
-              🔄 Rafraîchir
+              Rafraîchir
             </button>
           </div>
         </div>
@@ -1027,7 +1020,7 @@
 
       
       <div x-show="email.showCompose" class="card" style="margin-bottom: 20px; background: var(--panel-hover);">
-        <h3 style="margin-top: 0;">✉️ Nouveau message</h3>
+        <h3 style="margin-top: 0;">Nouveau message</h3>
         <form @submit.prevent="sendEmail()" style="display: flex; flex-direction: column; gap: 15px;">
           <div>
             <label style="display: block; margin-bottom: 5px; font-size: 0.9rem;">À :</label>
@@ -1060,18 +1053,18 @@
           </div>
           <div style="display: flex; gap: 10px;">
             <button type="submit" class="primary" style="flex: 1;" :disabled="email.sending">
-              <span x-show="!email.sending">📤 Envoyer</span>
-              <span x-show="email.sending">⏳ Envoi en cours...</span>
+              <span x-show="!email.sending">Envoyer</span>
+              <span x-show="email.sending">Envoi en cours...</span>
             </button>
             <button type="button" @click="email.compose = { to: '', subject: '', body: '' }" class="btn">
-              🗑️ Effacer
+              Effacer
             </button>
           </div>
         </form>
       </div>
 
       
-      <h3>📥 Derniers emails non lus</h3>
+      <h3>Derniers emails non lus</h3>
       <div class="card">
         <ul class="list">
           <template x-for="mail in email.emails" :key="mail.id">
@@ -1085,7 +1078,7 @@
           </template>
         </ul>
         <div x-show="email.emails.length === 0 && !email.error" class="empty">
-          Aucun email non lu 🎉
+          Aucun email non lu
         </div>
         <div x-show="email.error && email.emails.length === 0" class="empty">
           Impossible de charger les emails. Vérifiez que Proton Bridge est lancé.
@@ -1115,16 +1108,16 @@
       </div>
 
       
-      <h3 style="margin-top: 20px;">🔗 Accès rapide</h3>
+      <h3 style="margin-top: 20px;">Accès rapide</h3>
       <div class="card">
         <a href="https://mail.proton.me" target="_blank" class="hp-link">
-          🌍 Ouvrir Proton Mail (Web) ↗
+          Ouvrir Proton Mail (Web)
         </a>
       </div>
 
       
       <div class="card" style="margin-top: 20px; background: var(--panel-hover);">
-        <h4 style="margin-top: 0;">ℹ️ Configuration requise</h4>
+        <h4 style="margin-top: 0;">Configuration requise</h4>
         <p style="font-size: 0.9rem; color: var(--muted);">
           Pour afficher vos emails, vous devez avoir <strong>Proton Bridge</strong> installé et lancé sur votre PC.
           Les identifiants sont configurés dans le fichier <code>.env</code>.
@@ -1132,11 +1125,9 @@
       </div>
     </section>
 
-    <!-- ANALYTICS VIEW -->
     <section x-show="currentView === 'analytics'" x-transition:enter="view-enter" x-transition:leave="view-leave" class="view">
-      <h2>📊 Statistiques de productivité</h2>
+      <h2>Statistiques de productivité</h2>
 
-      <!-- Summary Cards -->
       <div class="analytics-summary">
         <div class="analytics-card">
           <div class="analytics-value" x-text="analytics.summary?.today_completed || 0"></div>
@@ -1156,44 +1147,38 @@
         </div>
       </div>
 
-      <!-- Charts Grid -->
       <div class="charts-grid">
-        <!-- Daily completion chart -->
         <div class="chart-card">
-          <h3>📈 Tâches terminées (30 derniers jours)</h3>
+          <h3>Tâches terminées (30 derniers jours)</h3>
           <div class="chart-container">
             <canvas id="dailyChart"></canvas>
           </div>
         </div>
 
-        <!-- Status distribution -->
         <div class="chart-card">
-          <h3>📋 Répartition par statut</h3>
+          <h3>Répartition par statut</h3>
           <div class="chart-container chart-small">
             <canvas id="statusChart"></canvas>
           </div>
         </div>
 
-        <!-- Priority distribution -->
         <div class="chart-card">
-          <h3>🎯 Répartition par priorité</h3>
+          <h3>Répartition par priorité</h3>
           <div class="chart-container chart-small">
             <canvas id="priorityChart"></canvas>
           </div>
         </div>
 
-        <!-- Weekly trend -->
         <div class="chart-card">
-          <h3>📅 Tendance hebdomadaire</h3>
+          <h3>Tendance hebdomadaire</h3>
           <div class="chart-container">
             <canvas id="weeklyChart"></canvas>
           </div>
         </div>
       </div>
 
-      <!-- Additional Stats -->
       <div class="card" style="margin-top: 20px;">
-        <h3>📊 Statistiques détaillées</h3>
+        <h3>Statistiques détaillées</h3>
         <div class="stats-details">
           <div class="stat-row">
             <span>Temps moyen de complétion:</span>
@@ -1213,23 +1198,22 @@
 
 
     <section x-show="currentView === 'settings'" x-transition:enter="view-enter" x-transition:leave="view-leave" class="view">
-      <h2>⚙️ Paramètres</h2>
+      <h2>Paramètres</h2>
 
-      <!-- Theme customization -->
       <div class="card">
-        <h3>🎨 Personnalisation</h3>
+        <h3>Personnalisation</h3>
 
         <div style="margin-bottom: 20px;">
           <p style="font-weight: 500; margin-bottom: 10px;">Mode d'affichage</p>
           <div style="display: flex; gap: 10px; flex-wrap: wrap;">
             <button class="btn" :class="{ 'primary': theme === 'dark' }" @click="theme = 'dark'; localStorage.setItem('theme', 'dark'); applyTheme();">
-              🌙 Sombre
+              Sombre
             </button>
             <button class="btn" :class="{ 'primary': theme === 'light' }" @click="theme = 'light'; localStorage.setItem('theme', 'light'); applyTheme();">
-              ☀️ Clair
+              Clair
             </button>
             <button class="btn" :class="{ 'primary': theme === 'auto' }" @click="theme = 'auto'; localStorage.setItem('theme', 'auto'); applyTheme();">
-              🔄 Auto (système)
+              Auto (système)
             </button>
           </div>
         </div>
@@ -1252,18 +1236,18 @@
       </div>
 
       <div class="card">
-        <h3>💾 Sauvegarde des données</h3>
+        <h3>Sauvegarde des données</h3>
         <p style="color: var(--muted); margin-bottom: 16px;">
           Exportez vos données pour créer une sauvegarde ou les transférer vers un autre appareil.
         </p>
         <div class="export-import-buttons">
           <button class="btn btn-primary" @click="exportData()" :disabled="importExport.exporting">
-            <span x-show="!importExport.exporting">📤 Exporter</span>
-            <span x-show="importExport.exporting">⏳ Export...</span>
+            <span x-show="!importExport.exporting">Exporter</span>
+            <span x-show="importExport.exporting">Export...</span>
           </button>
           <label class="btn btn-secondary import-label">
-            <span x-show="!importExport.importing">📥 Importer</span>
-            <span x-show="importExport.importing">⏳ Import...</span>
+            <span x-show="!importExport.importing">Importer</span>
+            <span x-show="importExport.importing">Import...</span>
             <input type="file" accept=".json" @change="importData($event)" style="display: none;" :disabled="importExport.importing">
           </label>
         </div>
@@ -1273,28 +1257,28 @@
       </div>
 
       <div class="card">
-        <h3>📄 Export PDF</h3>
+        <h3>Export PDF</h3>
         <p style="color: var(--muted); margin-bottom: 16px;">
           Exportez vos taches et notes rapides en PDF pour les imprimer ou les partager.
         </p>
         <div class="export-import-buttons">
           <button class="btn btn-primary" @click="exportTasksPDF()">
-            📄 Exporter les taches
+            Exporter les taches
           </button>
           <button class="btn btn-secondary" @click="exportNotesPDF()">
-            📝 Exporter les notes
+            Exporter les notes
           </button>
         </div>
       </div>
 
       <div class="card">
-        <h3>🔔 Notifications</h3>
+        <h3>Notifications</h3>
         <p style="color: var(--muted); margin-bottom: 16px;">
           Activez les notifications du navigateur pour recevoir des alertes Pomodoro.
         </p>
         <div class="export-import-buttons">
           <button class="btn" :class="{ 'btn-primary': notificationsEnabled, 'btn-secondary': !notificationsEnabled }" @click="toggleNotifications()">
-            <span x-text="notificationsEnabled ? '🔔 Notifications activees' : '🔕 Activer les notifications'"></span>
+            <span x-text="notificationsEnabled ? 'Notifications activees' : 'Activer les notifications'"></span>
           </button>
         </div>
         <p x-show="notificationsDenied" style="color: var(--danger); font-size: 0.85rem; margin-top: 12px;">
@@ -1303,8 +1287,8 @@
       </div>
 
       <div class="card">
-        <h3>ℹ️ Informations</h3>
-        <p><strong>Version:</strong> 1.1.0</p>
+        <h3>Informations</h3>
+        <p><strong>Version:</strong> 1.2.0</p>
         <p><strong>Mode:</strong> Local (SQLite)</p>
         <p><strong>API:</strong> <code x-text="API_BASE"></code></p>
         <hr style="border: 1px solid var(--border); margin: 20px 0;">
@@ -1317,7 +1301,7 @@
   </main>
 
   <footer>
-    <small>🥝 AutoDesk Kiwi v1.0 - Local Only - Made with ❤️</small>
+    <small>AutoDesk Kiwi v1.2.0</small>
   </footer>
 
   

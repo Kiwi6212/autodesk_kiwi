@@ -2,7 +2,7 @@ from datetime import datetime, timezone
 from typing import Any, cast
 
 from fastapi import APIRouter, HTTPException, Query, status
-from sqlalchemy import asc, desc, func
+from sqlalchemy import asc, desc, func, or_
 from sqlmodel import select
 
 from db import get_session
@@ -21,7 +21,7 @@ from models import (
 router = APIRouter(prefix="/tasks", tags=["tasks"])
 logger = setup_logger("tasks")
 
-TBL = cast(Any, Task).__table__.c
+TASK_COLUMNS = cast(Any, Task).__table__.c
 
 
 def task_to_out(task: Task, subtasks: list[Task] = None) -> TaskOut:
@@ -42,74 +42,68 @@ def task_to_out(task: Task, subtasks: list[Task] = None) -> TaskOut:
     )
 
 
+SORT_MAP = {
+    "created_at": asc(TASK_COLUMNS.created_at),
+    "-created_at": desc(TASK_COLUMNS.created_at),
+    "updated_at": asc(TASK_COLUMNS.updated_at),
+    "-updated_at": desc(TASK_COLUMNS.updated_at),
+    "priority": asc(TASK_COLUMNS.priority),
+    "-priority": desc(TASK_COLUMNS.priority),
+    "status": asc(TASK_COLUMNS.status),
+    "-status": desc(TASK_COLUMNS.status),
+    "title": asc(TASK_COLUMNS.title),
+    "-title": desc(TASK_COLUMNS.title),
+}
+
+
 @router.get("", response_model=list[TaskOut])
 def list_tasks(
-    q: str | None = Query(None, max_length=200, description="Search in title"),
-    status: str | None = Query(None, description=f"Filter by status: {VALID_STATUS}"),
-    priority: str | None = Query(None, description=f"Filter by priority: {VALID_PRIORITY}"),
-    tags: str | None = Query(None, max_length=200, description="Filter by tag (comma-separated for OR)"),
-    sort: str = Query("-created_at", description="Sort field"),
+    q: str | None = Query(None, max_length=200),
+    status: str | None = Query(None),
+    priority: str | None = Query(None),
+    tags: str | None = Query(None, max_length=200),
+    sort: str = Query("-created_at"),
     limit: int = Query(50, ge=1, le=100),
     offset: int = Query(0, ge=0),
-    include_subtasks: bool = Query(True, description="Include subtasks in response"),
+    include_subtasks: bool = Query(True),
 ):
-    stmt = select(Task).where(TBL.parent_id.is_(None))
+    stmt = select(Task).where(TASK_COLUMNS.parent_id.is_(None))
 
     if q:
-        stmt = stmt.where(TBL.title.ilike(f"%{q}%"))
+        stmt = stmt.where(TASK_COLUMNS.title.ilike(f"%{q}%"))
     if status:
         if status not in VALID_STATUS:
             raise HTTPException(400, f"Invalid status. Must be one of: {VALID_STATUS}")
-        stmt = stmt.where(TBL.status == status)
+        stmt = stmt.where(TASK_COLUMNS.status == status)
     if priority:
         if priority not in VALID_PRIORITY:
             raise HTTPException(400, f"Invalid priority. Must be one of: {VALID_PRIORITY}")
-        stmt = stmt.where(TBL.priority == priority)
+        stmt = stmt.where(TASK_COLUMNS.priority == priority)
     if tags:
-        # Filter tasks that contain any of the specified tags
         tag_list = [t.strip() for t in tags.split(",")]
-        tag_conditions = [TBL.tags.ilike(f"%{tag}%") for tag in tag_list]
-        from sqlalchemy import or_
+        tag_conditions = [TASK_COLUMNS.tags.ilike(f"%{tag}%") for tag in tag_list]
         stmt = stmt.where(or_(*tag_conditions))
 
-    sort_map = {
-        "created_at": asc(TBL.created_at),
-        "-created_at": desc(TBL.created_at),
-        "updated_at": asc(TBL.updated_at),
-        "-updated_at": desc(TBL.updated_at),
-        "priority": asc(TBL.priority),
-        "-priority": desc(TBL.priority),
-        "status": asc(TBL.status),
-        "-status": desc(TBL.status),
-        "title": asc(TBL.title),
-        "-title": desc(TBL.title),
-    }
+    if sort not in SORT_MAP:
+        raise HTTPException(400, f"Invalid sort. Must be one of: {list(SORT_MAP.keys())}")
 
-    if sort not in sort_map:
-        raise HTTPException(400, f"Invalid sort. Must be one of: {list(sort_map.keys())}")
-
-    stmt = stmt.order_by(sort_map[sort])
-    stmt = stmt.offset(offset).limit(limit)
+    stmt = stmt.order_by(SORT_MAP[sort]).offset(offset).limit(limit)
 
     with get_session() as session:
         tasks = list(session.exec(stmt))
 
         if include_subtasks:
             task_ids = [t.id for t in tasks]
-            subtasks_stmt = select(Task).where(Task.parent_id.in_(task_ids))
-            all_subtasks = list(session.exec(subtasks_stmt))
+            all_subtasks = list(session.exec(
+                select(Task).where(Task.parent_id.in_(task_ids))
+            ))
             subtasks_map = {}
             for st in all_subtasks:
-                if st.parent_id not in subtasks_map:
-                    subtasks_map[st.parent_id] = []
-                subtasks_map[st.parent_id].append(st)
+                subtasks_map.setdefault(st.parent_id, []).append(st)
 
-            result = [task_to_out(t, subtasks_map.get(t.id, [])) for t in tasks]
-        else:
-            result = [task_to_out(t) for t in tasks]
+            return [task_to_out(t, subtasks_map.get(t.id, [])) for t in tasks]
 
-        logger.info(f"Listed {len(tasks)} tasks (filters: q={q}, status={status}, priority={priority})")
-        return result
+        return [task_to_out(t) for t in tasks]
 
 
 @router.post("", response_model=TaskOut, status_code=status.HTTP_201_CREATED)
@@ -134,7 +128,7 @@ def create_task(payload: TaskCreate):
         session.add(task)
         session.commit()
         session.refresh(task)
-        logger.info(f"Created task #{task.id}: {task.title}" + (f" (subtask of #{payload.parent_id})" if payload.parent_id else ""))
+        logger.info(f"Created task #{task.id}: {task.title}")
         return task_to_out(task)
 
 
@@ -145,9 +139,7 @@ def get_task(task_id: int):
         if not task:
             raise TaskNotFoundException(task_id)
 
-        subtasks_stmt = select(Task).where(Task.parent_id == task_id)
-        subtasks = list(session.exec(subtasks_stmt))
-
+        subtasks = list(session.exec(select(Task).where(Task.parent_id == task_id)))
         return task_to_out(task, subtasks)
 
 
@@ -184,9 +176,7 @@ def update_task(task_id: int, payload: TaskUpdate):
         session.commit()
         session.refresh(task)
 
-        subtasks_stmt = select(Task).where(Task.parent_id == task_id)
-        subtasks = list(session.exec(subtasks_stmt))
-
+        subtasks = list(session.exec(select(Task).where(Task.parent_id == task_id)))
         logger.info(f"Updated task #{task.id}")
         return task_to_out(task, subtasks)
 
@@ -198,8 +188,7 @@ def delete_task(task_id: int):
         if not task:
             raise TaskNotFoundException(task_id)
 
-        subtasks_stmt = select(Task).where(Task.parent_id == task_id)
-        subtasks = list(session.exec(subtasks_stmt))
+        subtasks = list(session.exec(select(Task).where(Task.parent_id == task_id)))
         for st in subtasks:
             session.delete(st)
 
@@ -211,19 +200,16 @@ def delete_task(task_id: int):
 @router.post("/bulk-delete", status_code=status.HTTP_204_NO_CONTENT)
 def bulk_delete_tasks(payload: BulkDeletePayload):
     with get_session() as session:
-        stmt = select(Task).where(Task.id.in_(payload.ids))
-        tasks = session.exec(stmt).all()
+        tasks = session.exec(select(Task).where(Task.id.in_(payload.ids))).all()
 
-        count = len(tasks)
         for task in tasks:
-            subtasks_stmt = select(Task).where(Task.parent_id == task.id)
-            subtasks = list(session.exec(subtasks_stmt))
+            subtasks = list(session.exec(select(Task).where(Task.parent_id == task.id)))
             for st in subtasks:
                 session.delete(st)
             session.delete(task)
 
         session.commit()
-        logger.info(f"Bulk deleted {count} tasks")
+        logger.info(f"Bulk deleted {len(tasks)} tasks")
 
 
 @router.get("/stats/summary", response_model=dict)
@@ -254,18 +240,14 @@ def get_stats():
 
 @router.get("/tags/all", response_model=list[str])
 def get_all_tags():
-    """Get all unique tags used across all tasks"""
     with get_session() as session:
-        stmt = select(Task.tags).where(Task.tags.is_not(None), Task.tags != "")
-        tags_results = list(session.exec(stmt))
+        tags_results = list(session.exec(
+            select(Task.tags).where(Task.tags.is_not(None), Task.tags != "")
+        ))
 
-        # Extract unique tags from comma-separated strings
         unique_tags = set()
         for tags_str in tags_results:
             if tags_str:
-                tags_list = [t.strip() for t in tags_str.split(",") if t.strip()]
-                unique_tags.update(tags_list)
+                unique_tags.update(t.strip() for t in tags_str.split(",") if t.strip())
 
-        sorted_tags = sorted(list(unique_tags))
-        logger.info(f"Found {len(sorted_tags)} unique tags")
-        return sorted_tags
+        return sorted(unique_tags)
